@@ -23,20 +23,19 @@ The LN Project is a custom Linux distribution based on Arch Linux, designed spec
 * Rolling updates to keep software current. (tool to update easily TUI)
 * Easy to read Documentation source not only for LnOS but for any configurable tool thats on Arch Linux
 
-## Want to request a feature or report a bug, open an Issue!
-* [Github issues](https://github.com/uta-lug-nuts/LnOS/issues)
+## Todo
+Click here to see items next to implement [Todo](TODO.md)
 
 ## How to Contribute
 We welcome contributions from UTA students, faculty and the FOSS Community!
 
-### Report Issues: Use GitHub Issues to report bugs or suggest features.
-* [Create a Issue](https://github.com/uta-lug-nuts/LnOS/issues/new/choose)
+Report Issues: Use GitHub Issues to report bugs or suggest features.
+* please format your issues like so: [Issue Template](issues.md)
+Add Tools: Propose packages for CS or other disciplines.
+Improve Docs: Help write guides or improve this README.
 
 
-### Testing / Developers Guide
-
-Click here to see guide on testing: [Testing](docs/testing.md)
-* [Developers Guide WIP](docs/Developer-Guide.md)
+Click here to see guide on testing: [Testing](testing.md)
 (helpful when contributing)
 
 ## Features
