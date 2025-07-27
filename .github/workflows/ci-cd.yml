@@ -1,13 +1,13 @@
-name: LN OS ci/cd
+name: LN OS CI/CD
 
 on:
   schedule:
-    - cron: '0 3 * * 6'  
+    - cron: '0 3 * * 6'  # Every Saturday at 3 AM UTC
   workflow_dispatch:
 
 permissions:
   contents: write
-  id-token: write  
+  id-token: write
 
 jobs:
   sync:
@@ -30,14 +30,18 @@ jobs:
           git remote add upstream https://github.com/uta-lug-nuts/LnOS.git
           git fetch upstream
 
-      - name: Rebase main from upstream/main 
+      - name: Rebase from upstream/main
         run: |
           git checkout main
-          git pull --rebase origin main
           git rebase upstream/main
 
-      - name: Push rebased changes to fork
+      - name: Pull latest from fork before push
+        run: |
+          git pull --rebase origin main || echo "No fast-forward changes from origin/main"
+
+      - name: Push rebased changes to fork (with fallback)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git push https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git main
+          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+          git push origin main 
