@@ -7,7 +7,7 @@ on:
 
 permissions:
   contents: write
-  workflows: write  
+  id-token: write  
 
 jobs:
   sync:
