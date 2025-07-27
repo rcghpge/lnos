@@ -2,7 +2,8 @@ name: LN OS CI/CD
 
 on:
   schedule:
-    - cron: '0 3 * * 6'  # Every Saturday at 3 AM UTC
+    # Every Saturday at 3 AM UTC
+    - cron: '0 3 * * 6'  
   workflow_dispatch:
 
 permissions:
