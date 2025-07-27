@@ -1,4 +1,4 @@
-name: LN OS CI/CD
+name: LN OS ci/cd
 
 on:
   schedule:
