@@ -1,4 +1,4 @@
-name: Sync from upstream
+name: LN OS CI/CD
 
 on:
   schedule:
