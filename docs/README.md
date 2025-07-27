@@ -52,9 +52,8 @@ Click here to see guide on testing: [Testing](docs/testing.md)
 
 ## Installation Instructions
 
->**NOTE:**  
->This is highly experimental and not recommend to try on your dedicated machine yet since it hasn't been thoughrougly tested.
->please instead follow a real install guide from: [[https://wiki.archlinux.org/title/Installation_guide]] 
+> **NOTE:** This is highly experimental and not recommend to try on your dedicated machine yet since it hasn't been thoughrougly tested.
+please instead follow a real install guide from: [[https://wiki.archlinux.org/title/Installation_guide]] 
 
 1. Download Arch Linux ISO:
 
