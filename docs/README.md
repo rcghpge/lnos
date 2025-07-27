@@ -1,4 +1,4 @@
-# LnOS a Customized Arch Distro tailored to UTA Students
+# LN OS: A customized Arch Linux distribution tailored for UTA Students
 [![LN OS CI/CD](https://github.com/rcghpge/lnos/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/ci-cd.yml)
 
 "A UTA flavored distro with all the applications and tools the different engineering majors use" - Professor Bakker
