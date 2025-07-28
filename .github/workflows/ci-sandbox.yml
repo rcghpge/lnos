@@ -55,25 +55,26 @@ jobs:
           git log --oneline -n 1
           git push origin "${BACKUP_BRANCH}"
 
-      - name: Rebase sandbox with origin/main
+      - name: Rebase sandbox with origin/main (skip or resolve)
         run: |
           git checkout sandbox
           git fetch origin
           git rebase origin/main || {
-            echo "::warning::Conflict detected. Resolving in favor of sandbox workflow."
-            CONFLICT_FILE=".github/workflows/ci-sandbox.yml"
-            if git ls-files --unmerged "$CONFLICT_FILE" >/dev/null 2>&1; then
-              echo "::notice::Auto-resolving conflict using sandbox version of $CONFLICT_FILE"
-              git checkout --ours "$CONFLICT_FILE"
-              git add "$CONFLICT_FILE"
+            echo "::warning::Conflict detected. Checking conflicted files."
+
+            CONFLICT_FILES=$(git diff --name-only --diff-filter=U)
+            if echo "$CONFLICT_FILES" | grep -qE "ci-main\.yml|ci-sandbox\.yml"; then
+              echo "::notice::Skipping conflicting commit (likely unrelated to sandbox)."
+              git rebase --skip || {
+                echo "::error::Rebase skip failed. Aborting."
+                git rebase --abort
+                exit 1
+              }
             else
-              echo "::warning::Expected conflict file '$CONFLICT_FILE' not found. Skipping auto-resolve."
-            fi
-            git rebase --continue || {
-              echo "::error::Manual conflict resolution required."
+              echo "::error::Unhandled rebase conflict. Manual intervention required."
               git rebase --abort
               exit 1
-            }
+            fi
           }
 
       - name: Pull latest sandbox before push
