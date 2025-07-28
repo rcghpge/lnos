@@ -51,7 +51,7 @@ jobs:
       - name: Restore sandbox-specific files
         run: |
           git restore --source=origin/sandbox .github/workflows/ci-sandbox.yml || echo "ci-sandbox.yml not found"
-          git restore --source=origin/sandbox scripts/install.sh || echo "install.sh not found"
+          git restore --source=origin/sandbox sandbox/install.sh || echo "install.sh not found"
 
       - name: Validate only sandbox-specific diffs
         run: |
