@@ -59,22 +59,35 @@ jobs:
         run: |
           git checkout sandbox
           git fetch origin
+
           git rebase origin/main || {
             echo "::warning::Conflict detected. Checking conflicted files."
 
+            # Check merge conflicts from origin/main
             CONFLICT_FILES=$(git diff --name-only --diff-filter=U)
-            if echo "$CONFLICT_FILES" | grep -qE "ci-main\.yml|ci-sandbox\.yml"; then
-              echo "::notice::Skipping conflicting commit (likely unrelated to sandbox)."
+
+            # Skip merge conflicts from origin/main (ci-main.yml)
+            if echo "$CONFLICT_FILES" | grep -q '^\.github/workflows/ci-main\.yml$' && [ "$(echo "$CONFLICT_FILES" | wc -l)" -eq 1 ]; then
+              echo "::notice::Skipping conflicting commit in unrelated file (.github/workflows/ci-main.yml)"
               git rebase --skip || {
                 echo "::error::Rebase skip failed. Aborting."
                 git rebase --abort
                 exit 1
               }
-            else
-              echo "::error::Unhandled rebase conflict. Manual intervention required."
-              git rebase --abort
-              exit 1
-            fi
+            elif echo "$CONFLICT_FILES" | grep -q '^\.github/workflows/ci-sandbox\.yml$'; then
+              echo "::notice::Auto-resolving ci-sandbox.yml in favor of sandbox version"
+              git checkout --ours .github/workflows/ci-sandbox.yml
+              git add .github/workflows/ci-sandbox.yml
+              git rebase --continue || {
+                echo "::error::Rebase continue failed. Aborting."
+                git rebase --abort
+                exit 1
+              }
+             else
+               echo "::error::Unexpected merge conflicts in: $CONFLICT_FILES"
+               git rebase --abort
+               exit 1
+             fi
           }
 
       - name: Pull latest sandbox before push
