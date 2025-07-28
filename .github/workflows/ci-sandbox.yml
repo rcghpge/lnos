@@ -34,59 +34,43 @@ jobs:
         run: |
           git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
 
-      - name: Fetch origin and backup sandbox
+      - name: Backup sandbox branch
         run: |
-          set -euo pipefail
           git fetch origin
           TIMESTAMP="$(date +%Y%m%d%H%M%S)"
-          BACKUP_BRANCH="sandbox-recovery-${TIMESTAMP}"
-          echo "📦 Creating backup branch: ${BACKUP_BRANCH}"
-          git checkout -B "${BACKUP_BRANCH}" origin/sandbox
-          git push origin "${BACKUP_BRANCH}"
+          BACKUP_BRANCH="sandbox-backup-${TIMESTAMP}"
+          git checkout -b "$BACKUP_BRANCH" origin/sandbox
+          git push origin "$BACKUP_BRANCH"
 
-      - name: Rebase sandbox with origin/main (auto-resolve ci conflicts)
+      - name: Reset sandbox to origin/main
         run: |
           git checkout sandbox
           git fetch origin
-          until git rebase origin/main
-          do
-            echo "::warning::Conflict detected. Checking conflicted files..."
-            CONFLICT_FILES=$(git diff --name-only --diff-filter=U)
+          git reset --hard origin/main
 
-            if echo "$CONFLICT_FILES" | grep -q '^\.github/workflows/ci-main\.yml$' && [ "$(echo "$CONFLICT_FILES" | wc -l)" -eq 1 ]; then
-              echo "::notice::Skipping ci-main.yml conflict (unrelated to sandbox)"
-              git rebase --skip || {
-                echo "::error::Failed to skip commit. Aborting."
-                git rebase --abort
-                exit 1
-              }
-            elif echo "$CONFLICT_FILES" | grep -q '^\.github/workflows/ci-sandbox\.yml$'; then
-              echo "::notice::Auto-resolving sandbox conflict"
-              git checkout --ours .github/workflows/ci-sandbox.yml
-              git add .github/workflows/ci-sandbox.yml
-              git rebase --continue || {
-                echo "::error::Failed to continue after ci-sandbox.yml resolve"
-                git rebase --abort
-                exit 1
-              }
-            else
-              echo "::error::Unexpected conflict: $CONFLICT_FILES"
-              git rebase --abort
-              exit 1
-            fi
-          done
+      - name: Restore sandbox-specific workflow file
+        run: |
+          git restore --source=origin/sandbox .github/workflows/ci-sandbox.yml || echo "ci-sandbox.yml does not exist in old sandbox"
 
-      - name: Pull latest sandbox before push
-        run: git pull --rebase origin sandbox
+      - name: Validate diffs (must only be ci-sandbox.yml)
+        run: |
+          DIFF_FILES=$(git diff --name-only)
+          echo "::notice::Diffs after patch: $DIFF_FILES"
+          if [ "$(echo "$DIFF_FILES" | wc -l)" -gt 1 ] || ! echo "$DIFF_FILES" | grep -q '^\.github/workflows/ci-sandbox\.yml$'; then
+            echo "::error::Unexpected changes detected. Only ci-sandbox.yml should differ from origin/main."
+            git diff
+            exit 1
+          fi
 
-      - name: Push sandbox (if fast-forward)
+      - name: Commit sandbox override
+        run: |
+          git add .github/workflows/ci-sandbox.yml
+          git commit -m "Preserve ci-sandbox.yml on top of origin/main" || echo "Nothing to commit"
+
+      - name: Force-push sandbox
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git push origin sandbox || {
-            echo "::warning::Push failed. Manual sync required."
-            exit 0
-          }
+        run: git push origin sandbox --force
 
       - name: Tag sandbox pre-release
         run: |
@@ -95,4 +79,3 @@ jobs:
           PRERELEASE_TAG="v0.0.1-sandbox+${TIMESTAMP}-${SHORT_SHA}"
           git tag "$PRERELEASE_TAG"
           git push origin "$PRERELEASE_TAG"
-          echo "🏷️ Tagged sandbox release: $PRERELEASE_TAG"
