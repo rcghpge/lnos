@@ -3,7 +3,7 @@ name: LN OS CI/CD
 on:
   schedule:
     # Runs every Saturday at 3 AM UTC
-    - cron: '0 3 * * 6'  
+    - cron: '0 3 * * 6'
   workflow_dispatch:
 
 permissions:
@@ -31,6 +31,15 @@ jobs:
           git remote add upstream https://github.com/uta-lug-nuts/LnOS.git
           git fetch upstream
 
+      - name: Backup sandbox builds before rebase
+        run: |
+          git fetch origin
+          TIMESTAMP=$(date +%Y%m%d%H%M%S)
+          BACKUP_BRANCH="sandbox-recovery-$TIMESTAMP"
+          git branch "$BACKUP_BRANCH" origin/main
+          git push origin "$BACKUP_BRANCH"
+          echo "📦 Backup branch pushed: $BACKUP_BRANCH"
+
       - name: Rebase fork main with upstream/main
         run: |
           git checkout main
@@ -38,25 +47,21 @@ jobs:
 
       - name: Compare commit difference with upstream/main
         run: |
-            echo "Check fork from upstream/main..."
+          echo "🔍 Comparing origin/main with upstream/main..."
+          BEHIND=$(git log origin/main..upstream/main --oneline | wc -l)
+          AHEAD=$(git log upstream/main..origin/main --oneline | wc -l)
+          echo "📉 Commits behind upstream: $BEHIND"
+          echo "📈 Commits ahead of upstream: $AHEAD"
+          if [ "$BEHIND" -eq 0 ] && [ "$AHEAD" -eq 0 ]; then
+            echo "✅ Fork is perfectly in sync with upstream/main."
+          elif [ "$BEHIND" -gt 0 ]; then
+            echo "::warning: ⚠️ Fork is $BEHIND commits behind upstream."
+          elif [ "$AHEAD" -gt 0 ]; then
+            echo "::warning: 🚀 Fork is $AHEAD commits ahead of upstream."
+          fi
 
-            BEHIND=$(git log origin/main..upstream/main --oneline | wc -l)
-            AHEAD=$(git log upstream/main..origin/main --oneline | wc -l)
-
-            echo "Commits behind upstream: $BEHIND"
-            echo "Commits ahead of upstream: $AHEAD"
-
-            if [ "$BEHIND" -eq 0 ] && [ "$AHEAD" -eq 0 ]; then
-              echo "Fork is perfectly in sync with upstream/main."
-            elif [ "$BEHIND" -gt 0 ]; then
-              echo "::warning: Your fork is $BEHIND commits behind upstream."
-            elif [ "$AHEAD" -gt 0 ]; then
-              echo "::warning: Your fork is $AHEAD commits ahead of upstream."
-            fi
-
-      - name: Pull latest from fork before push 
-        run: |
-          git pull --rebase origin main
+      - name: Pull latest from fork before push
+        run: git pull --rebase origin main
 
       - name: Push only if fast-forward is possible
         env:
@@ -64,7 +69,8 @@ jobs:
         run: |
           git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
           if git push origin main; then
-            echo "Push successful. Fork is up to date."
+            echo "✅ Push successful. Fork is up to date."
           else
-            echo "Push failed. Non-fast-forward; manual sync required."
-            exit 0  
+            echo "::warning: ❌ Push failed. Non-fast-forward; manual sync required."
+            exit 0
+
