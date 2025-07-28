@@ -1,7 +1,6 @@
 name: LN OS CI/CD
 
 on:
-  on:
   push:
     branches: [main]
   schedule:
