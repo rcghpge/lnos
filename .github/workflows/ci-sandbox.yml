@@ -94,10 +94,14 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: git push origin sandbox --force
 
-      - name: Tag sandbox pre-release
+      - name: Tag sandbox pre-release (git tags - set on tag/no release)
         run: |
           TIMESTAMP=$(date +%Y%m%d%H%M%S)
           SHORT_SHA=$(git rev-parse --short HEAD)
           PRERELEASE_TAG="v0.0.1-sandbox+${TIMESTAMP}-${SHORT_SHA}"
+
+          # Create lightweight or annotated tag (GPG optional)
           git tag "$PRERELEASE_TAG"
           git push origin "$PRERELEASE_TAG"
+          echo "🏷️ Created release tag: $PRERELEASE_TAG"
+
