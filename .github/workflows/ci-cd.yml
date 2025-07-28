@@ -69,13 +69,12 @@ jobs:
         run: git pull --rebase origin main
 
       - name: Push only if fast-forward is possible
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if git push origin main; then
-            echo "✅ Push successful. Fork is up to date."
-          else
-            echo "::warning: ❌ Push failed. Non-fast-forward; manual sync required."
-            exit 0
-          fi
+          set -x # CI debugging. comment out/delete if needed. 
+          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+          if git push origin main; then echo "✅ Push successful. Fork is up to date."; else echo "::warning: ❌ Push failed. Manual sync required."; exit 0; fi
 
       - name: Tag synced pre-release build
         run: |
