@@ -16,10 +16,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout from fork
+      - name: Checkout sandbox branch
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: sandbox
           persist-credentials: false
 
       - name: Set up Git credentials
@@ -33,59 +34,49 @@ jobs:
         run: |
           git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
 
-      - name: Add upstream and fetch
-        run: |
-          git remote add upstream https://github.com/uta-lug-nuts/LnOS.git
-          git fetch upstream
-
-      - name: Backup sandbox builds before rebase
+      - name: Fetch origin and create sandbox backup
         run: |
           git fetch origin
           TIMESTAMP=$(date +%Y%m%d%H%M%S)
           BACKUP_BRANCH="sandbox-recovery-$TIMESTAMP"
-          git branch "$BACKUP_BRANCH" origin/main
+          git checkout -B "$BACKUP_BRANCH" origin/sandbox
           git push origin "$BACKUP_BRANCH"
-          echo "📦 Backup branch pushed: $BACKUP_BRANCH"
+          echo "📦 Backup created: $BACKUP_BRANCH"
 
-      - name: Rebase fork main with upstream/main
+      - name: Rebase sandbox with origin/main
         run: |
-          git checkout main
-          git rebase upstream/main
+          git checkout sandbox
+          git fetch origin
+          git rebase origin/main
 
-      - name: Compare commit difference with upstream/main
+      - name: Compare sandbox to origin/main
         run: |
-          echo "🔍 Comparing origin/main with upstream/main..."
-          BEHIND=$(git log origin/main..upstream/main --oneline | wc -l)
-          AHEAD=$(git log upstream/main..origin/main --oneline | wc -l)
-          echo "📉 Commits behind upstream: $BEHIND"
-          echo "📈 Commits ahead of upstream: $AHEAD"
-          if [ "$BEHIND" -eq 0 ] && [ "$AHEAD" -eq 0 ]; then
-            echo "✅ Fork is perfectly in sync with upstream/main."
-          elif [ "$BEHIND" -gt 0 ]; then
-            echo "::warning: ⚠️ Fork is $BEHIND commits behind upstream."
-          elif [ "$AHEAD" -gt 0 ]; then
-            echo "::warning: 🚀 Fork is $AHEAD commits ahead of upstream."
-          fi
+          git fetch origin
+          BEHIND=$(git log origin/sandbox..origin/main --oneline | wc -l)
+          AHEAD=$(git log origin/main..origin/sandbox --oneline | wc -l)
+          echo "📉 Commits behind main: $BEHIND"
+          echo "📈 Commits ahead of main: $AHEAD"
 
-      - name: Pull latest from fork before push
-        run: git pull --rebase origin main
+      - name: Pull latest sandbox before push
+        run: git pull --rebase origin sandbox
 
-      - name: Push only if fast-forward is possible
+      - name: Push sandbox (if fast-forward)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -x # CI debugging. comment out/delete if needed. 
+          set -x
           git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
-          if git push origin main; then echo "✅ Push successful. Fork is up to date."; else echo "::warning: ❌ Push failed. Manual sync required."; exit 0; fi
+          git push origin sandbox || {
+            echo "::warning::Push failed. Manual sync required."
+            exit 0
+          }
 
-      - name: Tag synced pre-release build
+      - name: Tag sandbox pre-release
         run: |
           TIMESTAMP=$(date +%Y%m%d%H%M%S)
           SHORT_SHA=$(git rev-parse --short HEAD)
-          PRERELEASE_TAG="v0.0.1-dev+${TIMESTAMP}-${SHORT_SHA}"
-
+          PRERELEASE_TAG="v0.0.1-sandbox+${TIMESTAMP}-${SHORT_SHA}"
           git tag "$PRERELEASE_TAG"
           git push origin "$PRERELEASE_TAG"
-
-          echo "🏷️ Tagged pre-release: $PRERELEASE_TAG"
+          echo "🏷️ Tagged sandbox release: $PRERELEASE_TAG"
 
