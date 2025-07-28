@@ -16,6 +16,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Set workflow for origin/main branch only
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "🚫 This workflow is restricted to 'main' branch only. Exiting."
+          exit 1
+
       - name: Checkout from fork
         uses: actions/checkout@v4
         with:
@@ -52,7 +58,7 @@ jobs:
           git checkout main
           git rebase upstream/main
 
-      - name: Compare commit difference with upstream/main
+      - name: Compare diffs with upstream/main
         run: |
           echo "🔍 Comparing origin/main with upstream/main..."
           BEHIND=$(git log origin/main..upstream/main --oneline | wc -l)
@@ -78,7 +84,7 @@ jobs:
           git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
           if git push origin main; then echo "✅ Push successful. Fork is up to date."; else echo "::warning: ❌ Push failed. Manual sync required."; exit 0; fi
 
-      - name: Tag synced pre-release build
+      - name: Tag a pre-release build (new feature)
         run: |
           TIMESTAMP=$(date +%Y%m%d%H%M%S)
           SHORT_SHA=$(git rev-parse --short HEAD)
@@ -88,4 +94,3 @@ jobs:
           git push origin "$PRERELEASE_TAG"
 
           echo "🏷️ Tagged pre-release: $PRERELEASE_TAG"
-
