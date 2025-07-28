@@ -37,58 +37,44 @@ jobs:
       - name: Fetch origin and backup sandbox
         run: |
           set -euo pipefail
-
           git fetch origin
-
           TIMESTAMP="$(date +%Y%m%d%H%M%S)"
           BACKUP_BRANCH="sandbox-recovery-${TIMESTAMP}"
-
-          if [ -z "${BACKUP_BRANCH}" ]; then
-            echo "::error::BACKUP_BRANCH is empty."
-            exit 1
-          fi
-
           echo "📦 Creating backup branch: ${BACKUP_BRANCH}"
           git checkout -B "${BACKUP_BRANCH}" origin/sandbox
-          git remote -v
-          git branch
-          git log --oneline -n 1
           git push origin "${BACKUP_BRANCH}"
 
-      - name: Rebase sandbox with origin/main (skip or resolve)
+      - name: Rebase sandbox with origin/main (auto-resolve ci conflicts)
         run: |
           git checkout sandbox
           git fetch origin
-
-          git rebase origin/main || {
-            echo "::warning::Conflict detected. Checking conflicted files."
-
-            # Check merge conflicts from origin/main
+          until git rebase origin/main
+          do
+            echo "::warning::Conflict detected. Checking conflicted files..."
             CONFLICT_FILES=$(git diff --name-only --diff-filter=U)
 
-            # Skip merge conflicts from origin/main (ci-main.yml)
             if echo "$CONFLICT_FILES" | grep -q '^\.github/workflows/ci-main\.yml$' && [ "$(echo "$CONFLICT_FILES" | wc -l)" -eq 1 ]; then
-              echo "::notice::Skipping conflicting commit in unrelated file (.github/workflows/ci-main.yml)"
+              echo "::notice::Skipping ci-main.yml conflict (unrelated to sandbox)"
               git rebase --skip || {
-                echo "::error::Rebase skip failed. Aborting."
+                echo "::error::Failed to skip commit. Aborting."
                 git rebase --abort
                 exit 1
               }
             elif echo "$CONFLICT_FILES" | grep -q '^\.github/workflows/ci-sandbox\.yml$'; then
-              echo "::notice::Auto-resolving ci-sandbox.yml in favor of sandbox version"
+              echo "::notice::Auto-resolving sandbox conflict"
               git checkout --ours .github/workflows/ci-sandbox.yml
               git add .github/workflows/ci-sandbox.yml
               git rebase --continue || {
-                echo "::error::Rebase continue failed. Aborting."
+                echo "::error::Failed to continue after ci-sandbox.yml resolve"
                 git rebase --abort
                 exit 1
               }
-             else
-               echo "::error::Unexpected merge conflicts in: $CONFLICT_FILES"
-               git rebase --abort
-               exit 1
-             fi
-          }
+            else
+              echo "::error::Unexpected conflict: $CONFLICT_FILES"
+              git rebase --abort
+              exit 1
+            fi
+          done
 
       - name: Pull latest sandbox before push
         run: git pull --rebase origin sandbox
@@ -97,8 +83,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -x
-          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
           git push origin sandbox || {
             echo "::warning::Push failed. Manual sync required."
             exit 0
