@@ -48,24 +48,46 @@ jobs:
           git fetch origin
           git reset --hard origin/main
 
-      - name: Restore sandbox-specific workflow file
+      - name: Restore sandbox-specific files
         run: |
-          git restore --source=origin/sandbox .github/workflows/ci-sandbox.yml || echo "ci-sandbox.yml does not exist in old sandbox"
+          git restore --source=origin/sandbox .github/workflows/ci-sandbox.yml || echo "ci-sandbox.yml not found"
+          git restore --source=origin/sandbox scripts/install.sh || echo "install.sh not found"
 
-      - name: Validate diffs (must only be ci-sandbox.yml)
+      - name: Validate only sandbox-specific diffs
         run: |
+          # Allowlist of sandbox-only files
+          ALLOWED_FILES=(
+            ".github/workflows/ci-sandbox.yml"
+            "scripts/install.sh"
+          )
+
           DIFF_FILES=$(git diff --name-only)
-          echo "::notice::Diffs after patch: $DIFF_FILES"
-          if [ "$(echo "$DIFF_FILES" | wc -l)" -gt 1 ] || ! echo "$DIFF_FILES" | grep -q '^\.github/workflows/ci-sandbox\.yml$'; then
-            echo "::error::Unexpected changes detected. Only ci-sandbox.yml should differ from origin/main."
+          echo "🔍 DIFF_FILES: '$DIFF_FILES'"
+
+          UNEXPECTED_FILES=()
+          for FILE in $DIFF_FILES; do
+            FOUND=false
+            for ALLOWED in "${ALLOWED_FILES[@]}"; do
+              if [[ "$FILE" == "$ALLOWED" ]]; then
+                FOUND=true
+                break
+              fi
+            done
+            if ! $FOUND; then
+              UNEXPECTED_FILES+=("$FILE")
+            fi
+          done
+
+          if [ "${#UNEXPECTED_FILES[@]}" -gt 0 ]; then
+            echo "::error::🚫 Unexpected changes detected: ${UNEXPECTED_FILES[*]}"
             git diff
             exit 1
           fi
 
-      - name: Commit sandbox override
+      - name: Commit sandbox overrides (if needed)
         run: |
-          git add .github/workflows/ci-sandbox.yml
-          git commit -m "Preserve ci-sandbox.yml on top of origin/main" || echo "Nothing to commit"
+          git add .github/workflows/ci-sandbox.yml scripts/install.sh
+          git commit -m "Apply sandbox overrides on origin/main" || echo "No sandbox-specific changes to commit."
 
       - name: Force-push sandbox
         env:
