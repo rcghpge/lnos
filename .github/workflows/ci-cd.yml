@@ -2,7 +2,6 @@ name: LN OS CI/CD
 
 on:
   schedule:
-    # Runs every Saturday at 3 AM UTC
     - cron: '0 3 * * 6'
   workflow_dispatch:
 
@@ -25,6 +24,12 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Set authenticated GitHub remote
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
 
       - name: Add upstream and fetch
         run: |
@@ -64,13 +69,21 @@ jobs:
         run: git pull --rebase origin main
 
       - name: Push only if fast-forward is possible
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
           if git push origin main; then
             echo "✅ Push successful. Fork is up to date."
           else
             echo "::warning: ❌ Push failed. Non-fast-forward; manual sync required."
             exit 0
+
+      - name: Tag synced pre-release build
+        run: |
+          TIMESTAMP=$(date +%Y%m%d%H%M%S)
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          PRERELEASE_TAG="v0.0.1-dev+${TIMESTAMP}-${SHORT_SHA}"
+
+          git tag "$PRERELEASE_TAG"
+          git push origin "$PRERELEASE_TAG"
+
+          echo "🏷️ Tagged pre-release: $PRERELEASE_TAG"
 
