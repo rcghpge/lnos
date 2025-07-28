@@ -75,6 +75,7 @@ jobs:
           else
             echo "::warning: ❌ Push failed. Non-fast-forward; manual sync required."
             exit 0
+          fi
 
       - name: Tag synced pre-release build
         run: |
