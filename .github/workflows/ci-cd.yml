@@ -1,6 +1,9 @@
 name: LN OS CI/CD (Sandbox Sync)
 
 on:
+  branches:
+    - sandbox
+    - 'sandbox-recovery-*'
   schedule:
     - cron: '0 3 * * 6' 
   workflow_dispatch:
