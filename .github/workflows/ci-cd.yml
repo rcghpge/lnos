@@ -1,6 +1,9 @@
 name: LN OS CI/CD
 
 on:
+  on:
+  push:
+    branches: [main]
   schedule:
     - cron: '0 3 * * 6'
   workflow_dispatch:
