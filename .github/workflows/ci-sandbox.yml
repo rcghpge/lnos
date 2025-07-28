@@ -34,7 +34,7 @@ jobs:
         run: |
           git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
 
-      - name: Fetch origin and create sandbox backup
+      - name: Fetch origin and backup sandbox
         run: |
           git fetch origin
           TIMESTAMP=$(date +%Y%m%d%H%M%S)
@@ -47,15 +47,16 @@ jobs:
         run: |
           git checkout sandbox
           git fetch origin
-          git rebase origin/main
-
-      - name: Compare sandbox to origin/main
-        run: |
-          git fetch origin
-          BEHIND=$(git log origin/sandbox..origin/main --oneline | wc -l)
-          AHEAD=$(git log origin/main..origin/sandbox --oneline | wc -l)
-          echo "📉 Commits behind main: $BEHIND"
-          echo "📈 Commits ahead of main: $AHEAD"
+          git rebase origin/main || {
+            echo "::warning::Conflict detected. Resolving in favor of sandbox workflow."
+            git checkout --ours .github/workflows/ci-sandbox.yml
+            git add .github/workflows/ci-sandbox.yml
+            git rebase --continue || {
+              echo "::error::Manual conflict resolution required."
+              git rebase --abort
+              exit 1
+            }
+          }
 
       - name: Pull latest sandbox before push
         run: git pull --rebase origin sandbox
