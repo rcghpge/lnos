@@ -58,7 +58,7 @@ jobs:
           # Allowlist of sandbox-only files
           ALLOWED_FILES=(
             ".github/workflows/ci-sandbox.yml"
-            "scripts/install.sh"
+            "sandbox/install.sh"
           )
 
           DIFF_FILES=$(git diff --name-only)
@@ -86,7 +86,7 @@ jobs:
 
       - name: Commit sandbox overrides (if needed)
         run: |
-          git add .github/workflows/ci-sandbox.yml scripts/install.sh
+          git add .github/workflows/ci-sandbox.yml sandbox/install.sh
           git commit -m "Apply sandbox overrides on origin/main" || echo "No sandbox-specific changes to commit."
 
       - name: Force-push sandbox
