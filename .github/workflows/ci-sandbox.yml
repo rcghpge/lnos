@@ -61,8 +61,14 @@ jobs:
           git fetch origin
           git rebase origin/main || {
             echo "::warning::Conflict detected. Resolving in favor of sandbox workflow."
-            git checkout --ours .github/workflows/ci-sandbox.yml
-            git add .github/workflows/ci-sandbox.yml
+            CONFLICT_FILE=".github/workflows/ci-sandbox.yml"
+            if git ls-files --unmerged "$CONFLICT_FILE" >/dev/null 2>&1; then
+              echo "::notice::Auto-resolving conflict using sandbox version of $CONFLICT_FILE"
+              git checkout --ours "$CONFLICT_FILE"
+              git add "$CONFLICT_FILE"
+            else
+              echo "::warning::Expected conflict file '$CONFLICT_FILE' not found. Skipping auto-resolve."
+            fi
             git rebase --continue || {
               echo "::error::Manual conflict resolution required."
               git rebase --abort
