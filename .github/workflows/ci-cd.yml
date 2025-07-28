@@ -2,7 +2,8 @@ name: LN OS CI/CD
 
 on:
   schedule:
-    - cron: '0 3 * * 6'  # Every Saturday at 3 AM UTC
+    # Runs every Saturday at 3 AM UTC
+    - cron: '0 3 * * 6'  
   workflow_dispatch:
 
 permissions:
@@ -34,6 +35,24 @@ jobs:
         run: |
           git checkout main
           git rebase upstream/main
+
+      - name: Compare commit difference with upstream/main
+        run: |
+            echo "Check fork from upstream/main..."
+
+            BEHIND=$(git log origin/main..upstream/main --oneline | wc -l)
+            AHEAD=$(git log upstream/main..origin/main --oneline | wc -l)
+
+            echo "Commits behind upstream: $BEHIND"
+            echo "Commits ahead of upstream: $AHEAD"
+
+            if [ "$BEHIND" -eq 0 ] && [ "$AHEAD" -eq 0 ]; then
+              echo "Fork is perfectly in sync with upstream/main."
+            elif [ "$BEHIND" -gt 0 ]; then
+              echo "::warning: Your fork is $BEHIND commits behind upstream."
+            elif [ "$AHEAD" -gt 0 ]; then
+              echo "::warning: Your fork is $AHEAD commits ahead of upstream."
+            fi
 
       - name: Pull latest from fork before push (prevent non-fast-forward)
         run: |
