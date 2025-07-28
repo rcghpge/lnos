@@ -31,7 +31,7 @@ jobs:
           git remote add upstream https://github.com/uta-lug-nuts/LnOS.git
           git fetch upstream
 
-      - name: Rebase fork main onto upstream/main
+      - name: Rebase fork main with upstream/main
         run: |
           git checkout main
           git rebase upstream/main
@@ -54,7 +54,7 @@ jobs:
               echo "::warning: Your fork is $AHEAD commits ahead of upstream."
             fi
 
-      - name: Pull latest from fork before push (prevent non-fast-forward)
+      - name: Pull latest from fork before push 
         run: |
           git pull --rebase origin main
 
@@ -66,5 +66,5 @@ jobs:
           if git push origin main; then
             echo "Push successful. Fork is up to date."
           else
-            echo "::warning Push failed. Non-fast-forward; manual sync required."
+            echo "Push failed. Non-fast-forward; manual sync required."
             exit 0  
