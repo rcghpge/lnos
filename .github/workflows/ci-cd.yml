@@ -1,6 +1,8 @@
-name: LN OS CI/CD
+name: LN OS CI/CD (Sandbox)
 
 on:
+  push:
+    branches: [sandbox]
   schedule:
     - cron: '0 3 * * 6'
   workflow_dispatch:
