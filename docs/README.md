@@ -2,6 +2,8 @@
 [![CodeQL](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql)
 [![LN OS CI/CD](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml)
 
+<center><img src="https://github.com/uta-lug-nuts/LnOS/blob/main/docs/images/Tux_with_toolbox.png?raw=true" width=50% alt="tux with toolbox"></center>
+
 "A UTA flavored distro with all the applications and tools the different engineering majors use" - Professor Bakker
 
 ---
@@ -126,5 +128,5 @@ More tools will be added based on student feedback.
 
 Inspired by Professor Bakker’s and UTA LUGNUTS Community of a vision for a UTA-specific distro.
 
-Built on the amazing work of the Arch Linux community.
+Built on the amazing work of the [Arch Linux community](htttps://archlinux.org).
 Install Files look beautiful from the wonderful tool: [GUM](https://github.com/charmbracelet/gum?tab=readme-ov-file)
