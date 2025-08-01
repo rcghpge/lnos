@@ -1,4 +1,29 @@
 #!/bin/bash
+
+# /*
+# Copyright 2025 UTA-LugNuts Authors.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# */
+
+
+#
+# @file LnOS-installer.sh
+# @brief Installs Arch linux and 
+# @author Betim-Hodza, Ric3y
+# @date 2025
+#
+
 set -e
 
 if ! command -v gum &> /dev/null; then
@@ -52,9 +77,9 @@ setup_desktop_and_packages()
             ;;
         "Hyprland(Tiling WM, basic dotfiles but requires more DIY)")
             gum_echo "Installing Hyprland..."
-            pacman -S --noconfirm wayland hyprland uwsm
+            pacman -S --noconfirm wayland hyprland
             ;;
-				"DWM(similar to Hyprland)")
+		"DWM(similar to Hyprland)")
             gum_echo "Installing DWM..."
 			gum_echo "[WARNING] DWM requires more work in the future, for now this option doesn't do anything"
             #pacman -S --noconfirm uwsm
@@ -209,15 +234,16 @@ configure_system()
 # * Automatically detects UEFI or BIOS, this will mount the parititions as well
 setup_drive()
 {
-	# Prompt for disk
-	gum style --border normal --margin "1" --padding "1" --border-foreground 212 "Available disks:"
-	lsblk -d -o NAME,SIZE,TYPE | grep disk
-	DISK=$(lsblk -d -o NAME | grep -E 'sd[a-z]|nvme[0-9]n[0-9]' | gum choose --header "Select the disk to install on (or Ctrl-C to exit):" | sed 's|^|/dev/|')
+	# Prompt user to select a disk
+    DISK_SELECTION=$(lsblk -do NAME,SIZE,MODEL | gum choose --header "Select the disk to install on (or Ctrl-C to exit):")
 
-	if [ -z "$DISK" ]; then
-		gum style --border normal --margin "1" --padding "1" --border-foreground 1 "Error: No disk selected."
-		exit 1
-	fi
+    # Grab only the path of the disk
+    DISK="/dev/$(echo "$DISK_SELECTION" | awk '{print $1}')"
+
+    if [ -z "$DISK" ]; then
+        gum style --border normal --margin "1" --padding "1" --border-foreground 1 "Error: No disk selected."
+        exit 1
+    fi
 
 	# Confirm disk selection
 	if ! gum confirm "WARNING: This will erase all data on $DISK. Continue?"; then
