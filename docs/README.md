@@ -2,7 +2,12 @@
 [![CodeQL](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql)
 [![LN OS CI/CD](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml)
 
-<center><img src="https://github.com/uta-lug-nuts/LnOS/blob/main/docs/images/Tux_with_toolbox.png?raw=true" width=50% alt="tux with toolbox"></center>
+<br>
+<div align="center">
+  <img src="https://github.com/rcghpge/lnos/blob/main/docs/images/Tux_with_toolbox.png?raw=true" width="50%" alt="Tux with toolbox">
+</div>
+<br>
+
 
 "A UTA flavored distro with all the applications and tools the different engineering majors use" - Professor Bakker
 
