@@ -64,9 +64,9 @@ jobs:
           if [ "$BEHIND" -eq 0 ] && [ "$AHEAD" -eq 0 ]; then
             echo "✅ Fork is in sync with upstream/main."
           elif [ "$BEHIND" -gt 0 ]; then
-            echo "::warning ::⚠️ Fork is $BEHIND commits behind upstream."
+            echo "::notice ::⚠️ Fork is $BEHIND commits behind upstream."
           elif [ "$AHEAD" -gt 0 ]; then
-            echo "::warning ::🚀 Fork is $AHEAD commits ahead of upstream."
+            echo "::notice ::🚀 Fork is $AHEAD commits ahead of upstream."
           fi
 
       - name: Verify runner's fork is up to date on origin/main
