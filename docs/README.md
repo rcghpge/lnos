@@ -3,7 +3,7 @@
 [![CodeQL](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql)
 [![LN OS CI/CD](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml)
 
-### LN OS — Arch Configured for the Maverick Mindset
+### LN OS — Arch Configured. Built at UT.
 
 > *"A UTA flavored distro with all the applications and tools the different engineering majors use."*  
 > — Professor Bakker
@@ -22,7 +22,7 @@
 > For mainline Arch Linux, we recommend a stable installation and following the official [Arch Linux installation guide](https://wiki.archlinux.org/title/Installation_guide) for the most accurate and up-to-date instructions.
 > Please see mainline LN OS dev at source tree for the most up to date build: [LN OS](https://github.com/uta-lug-nuts/LnOS.git)
 
-The LN Project is a custom Linux distribution based on Arch Linux, designed for University of Texas at Arlington (UTA) students. It aims to provide a lightweight, flexible, and powerful environment tailored to the needs of engineering students.The distro supports both x86_64 and ARM architectures (e.g., Raspberry Pi), ensuring compatibility with a wide range of student hardware.
+The LN Project is a custom Linux distribution based on Arch Linux, originally designed for University of Texas at Arlington (UTA) students. It aims to provide a lightweight, flexible, and powerful environment tailored to the needs of engineering students. The distro supports both x86_64 and ARM architectures (e.g., Raspberry Pi), ensuring compatibility with a wide range of student hardware.
 
 * First focused discipline is Computer Science (CS). 
 
