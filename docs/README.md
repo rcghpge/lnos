@@ -3,9 +3,11 @@
 [![CodeQL](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql)
 [![LN OS CI/CD](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml)
 
-### LN OS: A customized Arch Linux distribution tailored for UTA students
+### LN OS — Arch Configured for the Maverick Mindset
 
-"A UTA flavored distro with all the applications and tools the different engineering majors use" - Professor Bakker
+> *"A UTA flavored distro with all the applications and tools the different engineering majors use."*  
+> — Professor Bakker
+
 
 <br>
 <div align="center">
