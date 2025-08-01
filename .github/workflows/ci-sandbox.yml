@@ -1,10 +1,10 @@
-name: LN OS CI/CD (Sandbox)
+name: Sandbox
 
 on:
   push:
     branches: [sandbox]
   schedule:
-    - cron: '0 4 * * 6'
+  - cron: '0 6 * * 1'  # Runs Mondays at 12 AM CST midnight (06:00 UTC)
   workflow_dispatch:
 
 permissions:
@@ -12,7 +12,7 @@ permissions:
   id-token: write
 
 jobs:
-  sync-sandbox:
+  build-sandbox:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,47 +28,19 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Set authenticated GitHub remote
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
-
-      - name: Backup sandbox branch
-        run: |
-          git fetch origin
-          TIMESTAMP=$(date +%Y%m%d%H%M%S)
-          BACKUP_BRANCH="sandbox-backup-${TIMESTAMP}"
-          git checkout -b "$BACKUP_BRANCH" origin/sandbox
-          git push origin "$BACKUP_BRANCH"
-
-      - name: Reset sandbox to origin/main
-        run: |
-          git checkout sandbox
-          git fetch origin
-          git reset --hard origin/main
-
-      - name: Remove ci-main.yml from sandbox
-        run: |
-          if [ -f .github/workflows/ci-main.yml ]; then
-            echo "🗑️ Removing ci-main.yml after reset"
-            git rm .github/workflows/ci-main.yml
-            git commit -m "Remove ci-main.yml from sandbox"
-          fi
-
-      - name: Restore sandbox-specific files
+      - name: Set sandbox
         run: |
           git restore --source=origin/sandbox .github/workflows/ci-sandbox.yml || echo "ci-sandbox.yml not found"
           git restore --source=origin/sandbox sandbox/install.sh || echo "install.sh not found"
 
-      - name: Validate only sandbox-specific diffs
+      - name: Sandbox checks for builds
         run: |
           ALLOWED_FILES=(
             ".github/workflows/ci-sandbox.yml"
             "sandbox/install.sh"
           )
 
-          DIFF_FILES=$(git diff --name-only)
+          DIFF_FILES=$(git diff --name-only origin/merge...HEAD)
           echo "🔍 DIFF_FILES: $DIFF_FILES"
 
           UNEXPECTED_FILES=()
@@ -91,7 +63,7 @@ jobs:
             exit 1
           fi
 
-      - name: Set sandbox for immutable builds
+      - name: Build sandbox
         run: |
           DENIED_FILES=(
             ".github/workflows/ci-main.yml"
@@ -104,28 +76,18 @@ jobs:
             fi
           done
 
-      - name: Commit sandbox overrides (if needed)
+      - name: Final checks
         run: |
           git add .github/workflows/ci-sandbox.yml sandbox/install.sh
-          git commit -m "Apply sandbox overrides on origin/main" || echo "Nothing to commit"
+          git commit -m "Apply sandbox overrides" || echo "Nothing to commit"
 
-      - name: Force-push sandbox
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: git push origin sandbox --force
-
-      - name: Tag sandbox pre-release
+      - name: Tag sandbox pre-release (beta testing)
         run: |
           TIMESTAMP=$(date +%Y%m%d%H%M%S)
           SHORT_SHA=$(git rev-parse --short HEAD)
-          PRERELEASE_TAG="v0.0.1-sandbox+${TIMESTAMP}-${SHORT_SHA}"
+          PRERELEASE_TAG="v0.1.0-sandbox+${TIMESTAMP}-${SHORT_SHA}"
           git tag "$PRERELEASE_TAG"
           git push origin "$PRERELEASE_TAG"
-          echo "🏷️ Tagged sandbox release: $PRERELEASE_TAG"
+          echo "🏷️ Tagged sandbox pre-release: $PRERELEASE_TAG"
 
-      - name: Run sandbox installer script
-        run: |
-          echo "🚀 Running sandbox/install.sh..."
-          chmod +x sandbox/install.sh
-          ./sandbox/install.sh
 
