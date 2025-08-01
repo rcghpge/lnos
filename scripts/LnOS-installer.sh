@@ -1,20 +1,28 @@
 #!/bin/bash
 
-# LnOS
-# Copyright (C) 2025  UTA-LugNuts
+# /*
+# Copyright 2025 UTA-LugNuts Authors.
 
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+#     http://www.apache.org/licenses/LICENSE-2.0
 
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# */
+
+
+#
+# @file LnOS-installer.sh
+# @brief Installs Arch linux and 
+# @author Betim-Hodza, Ric3y
+# @date 2025
+#
 
 set -e
 
@@ -226,15 +234,16 @@ configure_system()
 # * Automatically detects UEFI or BIOS, this will mount the parititions as well
 setup_drive()
 {
-	# Prompt for disk
-	gum style --border normal --margin "1" --padding "1" --border-foreground 212 "Available disks:"
-	lsblk -d -o NAME,SIZE,TYPE | grep disk
-	DISK=$(lsblk -d -o NAME | grep -E 'sd[a-z]|nvme[0-9]n[0-9]' | gum choose --header "Select the disk to install on (or Ctrl-C to exit):" | sed 's|^|/dev/|')
+	# Prompt user to select a disk
+    DISK_SELECTION=$(lsblk -do NAME,SIZE,MODEL | gum choose --header "Select the disk to install on (or Ctrl-C to exit):")
 
-	if [ -z "$DISK" ]; then
-		gum style --border normal --margin "1" --padding "1" --border-foreground 1 "Error: No disk selected."
-		exit 1
-	fi
+    # Grab only the path of the disk
+    DISK="/dev/$(echo "$DISK_SELECTION" | awk '{print $1}')"
+
+    if [ -z "$DISK" ]; then
+        gum style --border normal --margin "1" --padding "1" --border-foreground 1 "Error: No disk selected."
+        exit 1
+    fi
 
 	# Confirm disk selection
 	if ! gum confirm "WARNING: This will erase all data on $DISK. Continue?"; then
