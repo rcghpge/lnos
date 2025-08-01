@@ -16,7 +16,9 @@
 ---
 
 ## Overview
-> **NOTE:** this is a sandbox build of upstream LN OS. For mainline LN please see source tree at upstream:  [LN OS](https://github.com/uta-lug-nuts/LnOS.git)
+> **NOTE:** This is a sandbox build of upstream LN OS. It is highly experimental and not recommended to try on your dedicated machine yet since it hasn't been thoughrougly tested.
+> For mainline Arch Linux, please instead follow a real install guide from: [Arch Linux installation guide](https://wiki.archlinux.org/title/Installation_guide) 
+> For mainline LN please see source tree at upstream: [LN OS](https://github.com/uta-lug-nuts/LnOS.git)
 
 The LN Project is a custom Linux distribution based on Arch Linux, designed for University of Texas at Arlington (UTA) students. It aims to provide a lightweight, flexible, and powerful environment tailored to the needs of engineering students.The distro supports both x86_64 and ARM architectures (e.g., Raspberry Pi), ensuring compatibility with a wide range of student hardware.
 
