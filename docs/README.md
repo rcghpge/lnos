@@ -75,7 +75,7 @@ Use tools like [rufus](https://rufus.ie/en/) or [Balena Etcher](https://www.bale
 
 clone our repo:
 ```bash
-git clone https://github.com/uta-lug-nuts/LnOS.git
+git clone https://github.com/rcghpge/lnos.git
 ```
 
 run and choose the target based on cpu architecture:
@@ -87,7 +87,7 @@ run and choose the target based on cpu architecture:
 
 After booting into the base system, clone our repo again:
 ```bash
-git clone https://github.com/uta-lug-nuts/LnOS.git
+git clone https://github.com/rcghpge/lnos.git
 ```
 
 run and follow the instructions in:
