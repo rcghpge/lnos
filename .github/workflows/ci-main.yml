@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: '0 3 * * 6'
+  - cron: '0 22 * * 5'  # Runs every Friday at 4:00 PM CST (22:00 UTC)
   workflow_dispatch:
 
 permissions:
@@ -44,19 +44,15 @@ jobs:
           git remote add upstream https://github.com/uta-lug-nuts/LnOS.git
           git fetch upstream
 
-      - name: Backup sandbox builds before rebase
-        run: |
-          git fetch origin
-          TIMESTAMP=$(date +%Y%m%d%H%M%S)
-          BACKUP_BRANCH="sandbox-recovery-$TIMESTAMP"
-          git branch "$BACKUP_BRANCH" origin/main
-          git push origin "$BACKUP_BRANCH"
-          echo "📦 Backup branch pushed: $BACKUP_BRANCH"
-
-      - name: Rebase fork main with upstream/main
+      - name: Sync fork/main with upstream/main (safe merge strategy)
         run: |
           git checkout main
-          git rebase upstream/main
+          echo "🔄 Attempting to merge upstream/main into fork/main..."
+          git merge upstream/main --no-edit --strategy=recursive -X ours || {
+            echo "❌ Merge conflict detected. Auto-merge failed. Aborting to preserve fork state.";
+            git merge --abort;
+            exit 1;
+          }
 
       - name: Compare diffs with upstream/main
         run: |
@@ -68,29 +64,44 @@ jobs:
           if [ "$BEHIND" -eq 0 ] && [ "$AHEAD" -eq 0 ]; then
             echo "✅ Fork is perfectly in sync with upstream/main."
           elif [ "$BEHIND" -gt 0 ]; then
-            echo "::warning: ⚠️ Fork is $BEHIND commits behind upstream."
+            echo "::warning ::⚠️ Fork is $BEHIND commits behind upstream."
           elif [ "$AHEAD" -gt 0 ]; then
-            echo "::warning: 🚀 Fork is $AHEAD commits ahead of upstream."
+            echo "::warning ::🚀 Fork is $AHEAD commits ahead of upstream."
           fi
 
       - name: Pull latest from fork before push
         run: git pull --rebase origin main
 
-      - name: Push only if fast-forward is possible
+      - name: Validate fast-forward push with --dry-run
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -x # CI debugging. comment out/delete if needed. 
           git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
-          if git push origin main; then echo "✅ Push successful. Fork is up to date."; else echo "::warning: ❌ Push failed. Manual sync required."; exit 0; fi
+          echo "🧪 Dry-run: checking if push to origin/main is fast-forward..."
+          if git push --dry-run origin main; then
+            echo "✅ Dry-run successful. Safe to push."
+          else
+            echo "::warning ::❌ Dry-run failed. Push would not fast-forward. Skipping push."
+            exit 0
+          fi
 
-      - name: Tag a pre-release build (new feature)
+      - name: Push only if fast-forward is possible
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -x
+          git push origin main
+          echo "✅ Push successful. Fork is up to date."
+
+      - name: Tag a pre-release build for main
         run: |
           TIMESTAMP=$(date +%Y%m%d%H%M%S)
           SHORT_SHA=$(git rev-parse --short HEAD)
-          PRERELEASE_TAG="v0.0.1-dev+${TIMESTAMP}-${SHORT_SHA}"
+          PRERELEASE_TAG="v0.0.1-dev+main-${TIMESTAMP}-${SHORT_SHA}"
 
           git tag "$PRERELEASE_TAG"
           git push origin "$PRERELEASE_TAG"
 
-          echo "🏷️ Tagged pre-release: $PRERELEASE_TAG"
+          echo "🏷️ Tagged pre-release for main: $PRERELEASE_TAG"
+
