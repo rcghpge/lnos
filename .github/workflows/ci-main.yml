@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   schedule:
-  - cron: '0 22 * * 5'  # Runs every Friday at 4:00 PM CST (22:00 UTC)
+    - cron: '0 22 * * 5'  # Runs every Friday at 4:00 PM CST (22:00 UTC)
   workflow_dispatch:
 
 permissions:
@@ -19,10 +19,10 @@ jobs:
       - name: Set workflow for origin/main branch only
         if: github.ref != 'refs/heads/main'
         run: |
-          echo "🚫 This workflow is restricted to 'main' branch only. Exiting."
+          echo "🚫 CI/CD workflow is set to 'main' branch only. Exiting."
           exit 1
 
-      - name: Checkout from fork
+      - name: Checkout from fork (bots)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -33,7 +33,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Set authenticated GitHub remote
+      - name: Set GitHub authentications for GH runners (bots)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -44,17 +44,17 @@ jobs:
           git remote add upstream https://github.com/uta-lug-nuts/LnOS.git
           git fetch upstream
 
-      - name: Sync fork/main with upstream/main (safe merge strategy)
+      - name: Sync fork/main with upstream/main
         run: |
           git checkout main
-          echo "🔄 Attempting to merge upstream/main into fork/main..."
+          echo "🔄 Merging upstream/main with fork/main..."
           git merge upstream/main --no-edit --strategy=recursive -X ours || {
             echo "❌ Merge conflict detected. Auto-merge failed. Aborting to preserve fork state.";
             git merge --abort;
             exit 1;
           }
 
-      - name: Compare diffs with upstream/main
+      - name: Compare if diffs from upstream/main
         run: |
           echo "🔍 Comparing origin/main with upstream/main..."
           BEHIND=$(git log origin/main..upstream/main --oneline | wc -l)
@@ -62,15 +62,31 @@ jobs:
           echo "📉 Commits behind upstream: $BEHIND"
           echo "📈 Commits ahead of upstream: $AHEAD"
           if [ "$BEHIND" -eq 0 ] && [ "$AHEAD" -eq 0 ]; then
-            echo "✅ Fork is perfectly in sync with upstream/main."
+            echo "✅ Fork is in sync with upstream/main."
           elif [ "$BEHIND" -gt 0 ]; then
             echo "::warning ::⚠️ Fork is $BEHIND commits behind upstream."
           elif [ "$AHEAD" -gt 0 ]; then
             echo "::warning ::🚀 Fork is $AHEAD commits ahead of upstream."
           fi
 
-      - name: Pull latest from fork before push
-        run: git pull --rebase origin main
+      - name: Verify runner's fork is up to date on origin/main
+        run: |
+          git fetch origin
+
+          LOCAL_HEAD=$(git rev-parse HEAD)
+          ORIGIN_MAIN=$(git rev-parse origin/main)
+
+          echo "🔎 HEAD commit:         $LOCAL_HEAD"
+          echo "🔎 origin/main commit:  $ORIGIN_MAIN"
+
+          if [ "$LOCAL_HEAD" != "$ORIGIN_MAIN" ]; then
+            echo "::error ::Local main has diverged from origin/main. Manual checks may be needed."
+            echo "📜 Commit differences:"
+            git log --oneline origin/main..HEAD
+            exit 1
+          else
+            echo "✅ GH runner's fork with main matches origin/main. No push needed."
+          fi
 
       - name: Validate fast-forward push with --dry-run
         env:
@@ -94,7 +110,7 @@ jobs:
           git push origin main
           echo "✅ Push successful. Fork is up to date."
 
-      - name: Tag a pre-release build for main
+      - name: Tag a dev pre-release build
         run: |
           TIMESTAMP=$(date +%Y%m%d%H%M%S)
           SHORT_SHA=$(git rev-parse --short HEAD)
