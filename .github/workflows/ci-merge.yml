@@ -34,6 +34,13 @@ jobs:
         run: |
           git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
 
+      - name: Install gh cli for ci runtime 
+        run: |
+          sudo rm -rf /usr/bin/gh
+          curl -sSL https://github.com/cli/cli/releases/latest/download/gh_$(curl -s https://api.github.com/repos/cli/cli/releases/latest | grep -Po '"tag_name": "\K.*?(?=")').linux_amd64.tar.gz | tar -xz
+          sudo cp gh_*/bin/gh /usr/bin/
+          gh --version
+
       - name: Fetch latest branches
         run: |
           git fetch origin main merge sandbox
