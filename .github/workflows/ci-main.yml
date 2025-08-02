@@ -114,7 +114,7 @@ jobs:
         run: |
           TIMESTAMP=$(date +%Y%m%d%H%M%S)
           SHORT_SHA=$(git rev-parse --short HEAD)
-          PRERELEASE_TAG="v0.0.1-dev+main-${TIMESTAMP}-${SHORT_SHA}"
+          PRERELEASE_TAG="v0.1.0-dev+main-${TIMESTAMP}-${SHORT_SHA}"
 
           git tag "$PRERELEASE_TAG"
           git push origin "$PRERELEASE_TAG"
