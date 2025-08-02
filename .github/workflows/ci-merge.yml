@@ -1,6 +1,8 @@
 name: Merge
 
 on:
+  push:
+    branches: [merge]
   workflow_dispatch:
   schedule:
     - cron: '0 21 * * 5'  # Fridays at 3 PM CST
