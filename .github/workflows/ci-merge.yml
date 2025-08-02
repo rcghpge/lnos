@@ -35,7 +35,7 @@ jobs:
           git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
 
       - name: Set up GitHub CLI
-        uses: github/gh-action@v2
+        uses: cli/gh-action@v2
 
       - name: Fetch latest branches
         run: |
