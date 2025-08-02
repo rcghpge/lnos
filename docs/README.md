@@ -18,13 +18,13 @@
 ---
 
 ## Overview
-> **NOTE:** This is a sandbox build of upstream LN OS. It is highly experimental and not recommended to try on your dedicated machine yet since it hasn't been thoughrougly tested.
-> For mainline Arch Linux, we recommend a stable installation and following the official [Arch Linux installation guide](https://wiki.archlinux.org/title/Installation_guide) for the most accurate and up-to-date instructions.
-> Please see mainline LN OS dev at source tree for the most up to date build: [LN OS](https://github.com/uta-lug-nuts/LnOS.git)
+> ℹ️ Note:
+> This is a sandbox club build of Ln OS source tree. It's an early-stage build for testing new features and workflows.
+> For source tree check out the latest build here: [Ln OS](https://github.com/uta-lug-nuts/LnOS.git)
 
-The LN Project is a custom Linux distribution based on Arch Linux, originally designed for University of Texas at Arlington (UTA) students. It aims to provide a lightweight, flexible, and powerful environment tailored to the needs of engineering students. The distro supports both x86_64 and ARM architectures (e.g., Raspberry Pi), ensuring compatibility with a wide range of student hardware.
+The LN Project is a Linux distribution based on Arch Linux, originally designed for University of Texas at Arlington (UTA) students. It aims to provide a lightweight, flexible, and powerful environment tailored to the needs of engineering students. The distro supports both x86_64 and ARM architectures (e.g., Raspberry Pi), ensuring compatibility with a wide range of student hardware.
 
-* First focused discipline is Computer Science (CS). 
+* First focus discipline is Computer Science (CS). 
 
 ## Goals 
 
@@ -35,13 +35,13 @@ The LN Project is a custom Linux distribution based on Arch Linux, originally de
 * Easy to read Documentation source not only for LnOS but for any configurable tool thats on Arch Linux
 
 ## Want to request a feature or report a bug, open an Issue!
-* [Github issues](https://github.com/uta-lug-nuts/LnOS/issues)
+* [Github issues](https://github.com/rcghpge/lnos/issues)
 
 ## How to Contribute
 We welcome contributions from UTA students, faculty and the FOSS Community!
 
 ### Report Issues: Use GitHub Issues to report bugs or suggest features.
-* [Create a Issue](https://github.com/uta-lug-nuts/LnOS/issues/new/choose)
+* [Create a Issue](https://github.com/rcghpge/lnos/issues/new/choose)
 
 
 ### Testing / Developers Guide
@@ -51,7 +51,7 @@ Click here to see guide on testing: [Testing](testing.md)
 
 ## Features
 
-* **Target Architectures:** x86_64 and (aarch64 / aarch32) 
+* **Target Architectures:** x86_64 and (aarch64/aarch32) 
   * Arm we're still researching (v7 or v8)
 * **Base System:** Minimal Arch Linux with a rolling release model.
 * **Major Themed presets:** Engineers will have preset options to choose  
@@ -64,10 +64,10 @@ Click here to see guide on testing: [Testing](testing.md)
 
 ### Custom ISO Installation
 
-Pre-built LnOS ISOs are available with the installer included.
+Pre-built Ln OS ISOs are available with the installer included.
 
 #### Option 1: Download Pre-built ISO
-1. Download the latest release from [GitHub Releases](https://github.com/uta-lug-nuts/LnOS/releases)
+1. Download the latest release from [GitHub Releases](https://github.com/rcghpge/lnos/releases)
    - `lnos-x86_64-*.iso` for Intel/AMD 64-bit systems
    - `lnos-aarch64-*.iso` for ARM 64-bit systems (Raspberry Pi 4+)
 
@@ -81,7 +81,7 @@ Pre-built LnOS ISOs are available with the installer included.
 
 3. Boot and install:
    - Boot from USB (automatic login as root)
-   - Run the installer: `cd /root/LnOS/scripts && ./LnOS-installer.sh --target=x86_64`
+   - Run the installer: `cd /root/lnos/scripts && ./LnOS-installer.sh --target=x86_64`
    - Follow the interactive prompts to select packages and desktop environment
 
 #### Option 2: Build Custom ISO
@@ -91,7 +91,7 @@ Pre-built LnOS ISOs are available with the installer included.
 2. Clone and open: 
    ```bash
    git clone https://github.com/rcghpge/lnos.git
-   cd LnOS
+   cd lnos
    code .
    ```
 3. Open in container: `Ctrl+Shift+P` → "Dev Containers: Reopen in Container"
@@ -108,14 +108,14 @@ sudo pacman -S archiso
 
 # Clone and build
 git clone https://github.com/rcghpge/lnos.git
-cd LnOS
+cd lnos
 ./build-iso.sh x86_64
 ```
 
 ##### Using Docker
 ```bash
 git clone https://github.com/rcghpge/lnos.git
-cd LnOS
+cd lnos
 
 # Build in Arch container
 docker run --rm --privileged \
@@ -131,11 +131,11 @@ docker run --rm --privileged \
 
 ### Development Environment
 
-To contribute to LnOS, use the VS Code dev container:
+To contribute to Ln OS, use the VS Code dev container:
 
 1. Install VS Code with "Dev Containers" extension
-2. Clone repository: `git clone https://github.com/uta-lug-nuts/LnOS.git`
-3. Open in VS Code: `code LnOS`
+2. Clone repository: `git clone https://github.com/rcghpge/lnos.git`
+3. Open in VS Code: `code lnos`
 4. Reopen in container: `Ctrl+Shift+P` → "Dev Containers: Reopen in Container"
 
 The dev container includes:
@@ -153,8 +153,8 @@ The dev container includes:
 
 3. Boot and install:
    ```bash
-   git clone https://github.com/uta-lug-nuts/LnOS.git
-   ./LnOS/scripts/LnOS-installer.sh --target=x86_64
+   git clone https://github.com/rcghpge/lnos.git
+   ./lnos/scripts/LnOS-installer.sh --target=x86_64
    ``` 
 
 
@@ -192,7 +192,7 @@ More tools will be added based on student feedback.
 
 ## Credits
 
-Inspired by Professor Bakker’s and UTA LUGNUTS Community of a vision for a UTA-specific distro.
+Inspired by Professor Bakker’s and UTA LUG NUTS Community of a vision for a UTA-specific distro.
 
 Built on the amazing work of the [Arch Linux community](htttps://archlinux.org).
 Install Files look beautiful from the wonderful tool: [GUM](https://github.com/charmbracelet/gum?tab=readme-ov-file)
