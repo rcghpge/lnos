@@ -14,7 +14,7 @@ on:
 
 jobs:
   shellcheck:
-    name: ShellCheck Lint
+    name: ShellCheck Shell Linter
     runs-on: ubuntu-latest
 
     steps:
