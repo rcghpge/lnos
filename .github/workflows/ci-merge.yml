@@ -34,9 +34,15 @@ jobs:
         run: |
           git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
 
-      - name: Set up GitHub CLI
-        uses: cli/gh-action@v2
-
+      - name: Install GitHub CLI (official release)
+        run: |
+          VERSION=$(curl -s https://api.github.com/repos/cli/cli/releases/latest | grep -Po '"tag_name": "\K.*?(?=")')
+          ARCH="amd64"
+          curl -LO https://github.com/cli/cli/releases/download/v${VERSION}/gh_${VERSION#v}_linux_${ARCH}.tar.gz
+          tar -xzf gh_${VERSION#v}_linux_${ARCH}.tar.gz
+          sudo cp gh_${VERSION#v}_linux_${ARCH}/bin/gh /usr/local/bin/
+          gh --version
+          
       - name: Fetch latest branches
         run: |
           git fetch origin main merge sandbox
