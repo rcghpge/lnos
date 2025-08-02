@@ -36,39 +36,39 @@ jobs:
 
       - name: Sandbox checks for builds
         run: |
-        ALLOWED_FILES=(
+          ALLOWED_FILES=(
           ".github/workflows/ci-sandbox.yml"
           "sandbox/install.sh"
-        )
+          )
 
-        DIFF_FILES=$(git diff --name-only origin/merge...HEAD)
-        echo "::notice::🔍 DIFF_FILES: $DIFF_FILES"
+          DIFF_FILES=$(git diff --name-only origin/merge...HEAD)
+          echo "::notice::🔍 DIFF_FILES: $DIFF_FILES"
 
-        UNEXPECTED_FILES=()
-        for FILE in $DIFF_FILES; do
-          FOUND=false
-          for ALLOWED in "${ALLOWED_FILES[@]}"; do
-            if [[ "$FILE" == "$ALLOWED" ]]; then
-              FOUND=true
-              break
+          UNEXPECTED_FILES=()
+          for FILE in $DIFF_FILES; do
+            FOUND=false
+            for ALLOWED in "${ALLOWED_FILES[@]}"; do
+              if [[ "$FILE" == "$ALLOWED" ]]; then
+                FOUND=true
+                break
+              fi
+            done
+            if ! $FOUND; then
+              UNEXPECTED_FILES+=("$FILE")
             fi
           done
-          if ! $FOUND; then
-            UNEXPECTED_FILES+=("$FILE")
-          fi
-        done
 
-        if [ "${#UNEXPECTED_FILES[@]}" -gt 0 ]; then
-          if [ "${{ github.actor }}" != "rcghpge" ]; then
-            echo "::notice::🔔 Unexpected changes detected in: ${UNEXPECTED_FILES[*]}"
-            git diff
-            exit 1
+          if [ "${#UNEXPECTED_FILES[@]}" -gt 0 ]; then
+            if [ "${{ github.actor }}" != "rcghpge" ]; then
+               echo "::notice::🔔 Unexpected changes detected in: ${UNEXPECTED_FILES[*]}"
+               git diff
+               exit 1
+            else
+              echo "::notice::⚠️ Bypass enabled for trusted actor: ${{ github.actor }}. Allowing unexpected files."
+            fi
           else
-            echo "::notice::⚠️ Bypass enabled for trusted actor: ${{ github.actor }}. Allowing unexpected files."
+            echo "✅ Sandbox checks complete."
           fi
-        else
-          echo "✅ Sandbox checks complete."
-        fi
 
       - name: Build sandbox
         run: |
