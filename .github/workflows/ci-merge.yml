@@ -5,7 +5,7 @@ on:
     branches: [merge]
   workflow_dispatch:
   schedule:
-    - cron: '0 21 * * 5'  # Fridays at 3 PM CST
+    - cron: '0 21 * * 5'  # Fridays at 3 PM CST (21:00 UTC)
 
 permissions:
   contents: write
@@ -23,7 +23,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Set Git identity
+      - name: Set Git on runtime with GH bots
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -34,12 +34,8 @@ jobs:
         run: |
           git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
 
-      - name: Install gh cli for ci runtime 
-        run: |
-          sudo rm -rf /usr/bin/gh
-          curl -sSL https://github.com/cli/cli/releases/latest/download/gh_$(curl -s https://api.github.com/repos/cli/cli/releases/latest | grep -Po '"tag_name": "\K.*?(?=")').linux_amd64.tar.gz | tar -xz
-          sudo cp gh_*/bin/gh /usr/bin/
-          gh --version
+      - name: Set up GitHub CLI
+        uses: cli/gh-action@v2
 
       - name: Fetch latest branches
         run: |
@@ -60,7 +56,7 @@ jobs:
       - name: Push updated merge branch
         run: git push origin merge
 
-      - name: Generate PR's
+      - name: Generate PR: merge → sandbox
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
