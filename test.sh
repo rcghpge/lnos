@@ -1,3 +1,3 @@
 #!/bin/bash
 
-echo "check shell linter runtime"
+echo "testing shell linter"
