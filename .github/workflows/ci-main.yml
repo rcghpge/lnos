@@ -12,7 +12,7 @@ permissions:
   id-token: write
 
 jobs:
-  sync:
+  sync-source-tree:
     runs-on: ubuntu-latest
 
     steps:
