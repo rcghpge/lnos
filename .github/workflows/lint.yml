@@ -1,0 +1,49 @@
+name: ShellCheck
+
+on:
+  push:
+    paths:
+      - '**/*.sh'
+      - '**/*.bash'
+      - '**/*.zsh'
+  pull_request:
+    paths:
+      - '**/*.sh'
+      - '**/*.bash'
+      - '**/*.zsh'
+
+jobs:
+  shellcheck:
+    name: ShellCheck Shell Linter
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🧪 Install ShellCheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: 🔍 Find shell scripts
+        id: list_shell_scripts
+        run: |
+          find . \
+            \( -name "*.sh" -o -name "*.bash" -o -name "*.zsh" \) \
+            -type f -not -path "./.git/*" \
+            > shell_files.txt
+
+          FILE_COUNT=$(wc -l < shell_files.txt)
+          echo "Found $FILE_COUNT shell script(s)."
+          cat shell_files.txt || true
+
+          if [ "$FILE_COUNT" -eq 0 ]; then
+            echo "✅ No shell files to lint."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 🧼 Run ShellCheck
+        if: steps.list_shell_scripts.outputs.skip != 'true'
+        run: |
+          xargs -a shell_files.txt -r shellcheck --external-sources --severity=style --color=always

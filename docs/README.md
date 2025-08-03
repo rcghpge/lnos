@@ -3,7 +3,7 @@
 [![CodeQL](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql)
 [![LN OS CI/CD](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml)
 
-### LN OS — Arch Configured. Built at UT.
+### LnOS — Arch Configured. Built at UT.
 
 > *"A UTA flavored distro with all the applications and tools the different engineering majors use."*  
 > — Professor Bakker
@@ -18,13 +18,13 @@
 ---
 
 ## Overview
-> **NOTE:** This is a sandbox build of upstream LN OS. It is highly experimental and not recommended to try on your dedicated machine yet since it hasn't been thoughrougly tested.
-> For mainline Arch Linux, we recommend a stable installation and following the official [Arch Linux installation guide](https://wiki.archlinux.org/title/Installation_guide) for the most accurate and up-to-date instructions.
-> Please see mainline LN OS dev at source tree for the most up to date build: [LN OS](https://github.com/uta-lug-nuts/LnOS.git)
+> ℹ️ Note:
+> This is a sandbox club build of Ln OS source tree. It's an early-stage build for building and testing new features and workflows.
+> For source tree check out the latest build here: [Ln OS](https://github.com/uta-lug-nuts/LnOS.git)
 
-The LN Project is a custom Linux distribution based on Arch Linux, originally designed for University of Texas at Arlington (UTA) students. It aims to provide a lightweight, flexible, and powerful environment tailored to the needs of engineering students. The distro supports both x86_64 and ARM architectures (e.g., Raspberry Pi), ensuring compatibility with a wide range of student hardware.
+The LN Project is a Linux distribution based on Arch Linux, originally designed for University of Texas at Arlington (UTA) students. It aims to provide a lightweight, flexible, and powerful environment tailored to the needs of engineering students. The distro supports both x86_64 and ARM architectures (e.g., Raspberry Pi), ensuring compatibility with a wide range of student hardware.
 
-* First focused discipline is Computer Science (CS). 
+* First focus discipline is Computer Science (CS). 
 
 ## Goals 
 
@@ -35,13 +35,13 @@ The LN Project is a custom Linux distribution based on Arch Linux, originally de
 * Easy to read Documentation source not only for LnOS but for any configurable tool thats on Arch Linux
 
 ## Want to request a feature or report a bug, open an Issue!
-* [Github issues](https://github.com/uta-lug-nuts/LnOS/issues)
+* [Github issues](https://github.com/rcghpge/lnos/issues)
 
 ## How to Contribute
 We welcome contributions from UTA students, faculty and the FOSS Community!
 
 ### Report Issues: Use GitHub Issues to report bugs or suggest features.
-* [Create a Issue](https://github.com/uta-lug-nuts/LnOS/issues/new/choose)
+* [Create a Issue](https://github.com/rcghpge/lnos/issues/new/choose)
 
 
 ### Testing / Developers Guide
@@ -51,7 +51,7 @@ Click here to see guide on testing: [Testing](testing.md)
 
 ## Features
 
-* **Target Architectures:** x86_64 and (aarch64 / aarch32) 
+* **Target Architectures:** x86_64 and (aarch64/aarch32) 
   * Arm we're still researching (v7 or v8)
 * **Base System:** Minimal Arch Linux with a rolling release model.
 * **Major Themed presets:** Engineers will have preset options to choose  
@@ -62,40 +62,100 @@ Click here to see guide on testing: [Testing](testing.md)
 
 ## Installation Instructions
 
-1. Download Arch Linux ISO:
+### Custom ISO Installation
 
-Get the latest ISO from [[https://archlinux.org/download/]]
+Pre-built Ln OS ISOs are available with the installer included.
 
-2. Create Bootable Media:
+#### Option 1: Download Pre-built ISO (source tree ISO)
+1. Download the latest release from [GitHub Releases](https://github.com/rcghpge/lnos/releases)
+   - `lnos-x86_64-*.iso` for Intel/AMD 64-bit systems
+   - `lnos-aarch64-*.iso` for ARM 64-bit systems (Raspberry Pi 4+)
 
-Use tools like [rufus](https://rufus.ie/en/) or [Balena Etcher](https://www.balena.io/etcher) to write the ISO to a USB drive or SD card.
+2. Create bootable USB:
+   ```bash
+   # Linux/macOS
+   sudo dd if=lnos-x86_64-*.iso of=/dev/sdX bs=4M status=progress
+   
+   # Windows: Use Rufus or Balena Etcher
+   ```
 
+3. Boot and install:
+   - Boot from USB (automatic login as root)
+   - Run the installer: `cd /root/lnos/scripts && ./LnOS-installer.sh --target=x86_64`
+   - Follow the interactive prompts to select packages and desktop environment
 
-3. Boot and Install Base System:
+#### Option 2: Build Custom ISO
 
-clone our repo:
+##### Using VS Code Dev Container
+1. Install VS Code with "Dev Containers" extension
+2. Clone and open: 
+   ```bash
+   git clone https://github.com/rcghpge/lnos.git
+   cd lnos
+   code .
+   ```
+3. Open in container: `Ctrl+Shift+P` → "Dev Containers: Reopen in Container"
+4. Build ISO: 
+   ```bash
+   ./build-iso.sh x86_64     # Build x86_64 ISO
+   ./build-iso.sh aarch64    # Build ARM64 ISO
+   ```
+
+##### Using Local Arch Linux
+```bash
+# Install archiso
+sudo pacman -S archiso
+
+# Clone and build
+git clone https://github.com/rcghpge/lnos.git
+cd lnos
+./build-iso.sh x86_64
+```
+
+##### Using Docker
 ```bash
 git clone https://github.com/rcghpge/lnos.git
+cd lnos
+
+# Build in Arch container
+docker run --rm --privileged \
+  -v $(pwd):/workspace \
+  -w /workspace \
+  archlinux:latest \
+  bash -c "
+    pacman -Syu --noconfirm
+    pacman -S --noconfirm archiso
+    ./build-iso.sh x86_64
+  "
 ```
 
-run and choose the target based on cpu architecture:
-```bash
-./scripts/LnOS-installer.sh --target=[x86_64 | arm]
-```
+### Development Environment
 
-4. Add CS Tools:
+To contribute to Ln OS, use the VS Code dev container:
 
-After booting into the base system, clone our repo again:
-```bash
-git clone https://github.com/rcghpge/lnos.git
-```
+1. Install VS Code with "Dev Containers" extension
+2. Clone repository: `git clone https://github.com/rcghpge/lnos.git`
+3. Open in VS Code: `code lnos`
+4. Reopen in container: `Ctrl+Shift+P` → "Dev Containers: Reopen in Container"
 
-run and follow the instructions in:
-```bash
-./scripts/Environment-setup.sh
-```
+The dev container includes:
+- Arch Linux environment
+- Pre-installed archiso and build tools
+- Build aliases: `build-x86`, `build-arm`, `clean-build`
+- Shell script linting and formatting
+- Cross-platform compatibility (Windows, macOS, Linux)
 
-Done! 
+### Manual Installation
+
+1. Download Arch Linux ISO from [archlinux.org/download](https://archlinux.org/download/)
+
+2. Create bootable media using [Rufus](https://rufus.ie/en/) or [Balena Etcher](https://www.balena.io/etcher)
+
+3. Boot and install:
+   ```bash
+   git clone https://github.com/rcghpge/lnos.git
+   ./lnos/scripts/LnOS-installer.sh --target=x86_64
+   ``` 
 
 
 
@@ -125,9 +185,9 @@ More tools will be added based on student feedback.
 ## Known Issues
 
 * Not fully reliable yet (still not even a 1.0.0 release)
-* No testing done for ARM.
-* no iso specific to the repo 
-* No GH Action pipeline test 
+* ARM64 support is work in progress (basic support implemented)
+* Limited testing on various hardware configurations
+* Some desktop environments may require additional configuration 
 
 
 ## Credits
