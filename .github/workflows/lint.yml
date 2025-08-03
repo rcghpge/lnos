@@ -25,8 +25,12 @@ jobs:
 
       - name: 🧰 Setup Arch packages
         run: |
-          pacman -Syu --noconfirm || true
-          pacman -S --noconfirm shellcheck bash coreutils findutils grep || true
+          mkdir -p /etc/pacman.d/hooks
+          echo -e "[Trigger]\nOperation = Install\nOperation = Upgrade\nType = Package\nTarget = *\n\n[Action]\nDescription = Dummy hook\nWhen = PostTransaction\nExec = /bin/true" \
+            > /etc/pacman.d/hooks/disable-conditionupdate.hook
+
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm shellcheck jq bash coreutils findutils grep
 
       - name: 🔍 Check for Shell Scripts
         id: list_shell_scripts
