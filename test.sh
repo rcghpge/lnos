@@ -1,3 +1,3 @@
 #!/bin/bash
 
-echo "freeze shell linter on current version. running checks"
+echo "freeze shell linter. runtime checks"
