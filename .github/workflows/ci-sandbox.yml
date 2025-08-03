@@ -74,6 +74,7 @@ jobs:
         run: |
           DENIED_FILES=(
             ".github/workflows/ci-main.yml"
+            ".github/workflows/ci-merge.yml"
           )
 
           for FILE in "${DENIED_FILES[@]}"; do
