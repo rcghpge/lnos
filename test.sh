@@ -1,3 +1,3 @@
 #!/bin/bash
 
-echo "check runtime on shellcheck to generate a summary"
+echo "check runtime on shellcheck with json parsing"
