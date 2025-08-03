@@ -17,7 +17,7 @@
 
 ---
 
-## Overview
+### Overview
 > ℹ️ Note:
 > This is a sandbox club build of Ln OS source tree. It's an early-stage build for building and testing new features and workflows.
 > For source tree check out the latest build here: [Ln OS](https://github.com/uta-lug-nuts/LnOS.git)
@@ -26,7 +26,7 @@ The LN Project is a Linux distribution based on Arch Linux, originally designed 
 
 * First focus discipline is Computer Science (CS). 
 
-## Goals 
+### Goals 
 
 * Lightweight and minimal base, built from Arch Linux.
 * Pre-configured tools for CS students, with plans to expand to other engineering disciplines (e.g., EE).
@@ -34,10 +34,10 @@ The LN Project is a Linux distribution based on Arch Linux, originally designed 
 * Rolling updates to keep software current. (tool to update easily TUI)
 * Easy to read Documentation source not only for LnOS but for any configurable tool thats on Arch Linux
 
-## Want to request a feature or report a bug, open an Issue!
+### Want to request a feature or report a bug, open an Issue!
 * [Github issues](https://github.com/uta-lug-nuts/LnOS/issues)
 
-## How to Contribute
+### How to Contribute
 We welcome contributions from UTA students, faculty and the FOSS Community!
 
 ### Report Issues: Use GitHub Issues to report bugs or suggest features.
@@ -49,7 +49,7 @@ We welcome contributions from UTA students, faculty and the FOSS Community!
 Click here to see guide on testing: [Testing](testing.md)
 (helpful when contributing)
 
-## Features
+### Features
 
 * **Target Architectures:** x86_64 and (aarch64/aarch32) 
   * Arm we're still researching (v7 or v8)
@@ -59,8 +59,9 @@ Click here to see guide on testing: [Testing](testing.md)
   * To learn more about Tiling Window Managers [click here](tilingWM.md)
 * Documentation: Guides and support for UTA students on installation and customization of tools.
 
+---
 
-## Installation Instructions for Source Tree and Sandbox Club Development
+### Installation Instructions for Source Tree and Sandbox Club Development
 
 The installation below mirrors source tree for official releases. For this version with sandbox development:
 ```bash
@@ -174,7 +175,7 @@ The dev container includes:
 
 
 
-## Included Packages (CS Focus)
+### Included Packages (CS Focus)
 Here’s a preliminary list of tools for CS students:
 
 * Editors: VSCode (vscode), Vim
@@ -187,7 +188,7 @@ Here’s a preliminary list of tools for CS students:
 More tools will be added based on student feedback.
 
 
-## Resources We’ve Looked At
+### Resources We’ve Looked At
 
 [Arch Linux Official Site](https://archlinux.org)
 [Linux From Scratch](https://linuxfromscratch.org)
@@ -197,7 +198,7 @@ More tools will be added based on student feedback.
 * this has seriously been amazing
 
 
-## Known Issues
+### Known Issues
 
 * Not fully reliable yet (still not even a 1.0.0 release)
 * ARM64 support is work in progress (basic support implemented)
