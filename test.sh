@@ -1,3 +1,3 @@
 #!/bin/bash
 
-echo "check runtime on shellcheck with json parsing"
+echo "check runtime with json parsing on shell linter"
