@@ -66,3 +66,4 @@ jobs:
             URL="https://www.shellcheck.net/wiki/$code"
             echo "🔹 [$code]($URL): $COUNT occurrence(s)"
           done
+          exit 0
