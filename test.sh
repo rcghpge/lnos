@@ -1,3 +1,3 @@
 #!/bin/bash
 
-echo "set configs on shell linter. running checks"
+echo "freeze shell linter on current version. running checks"
