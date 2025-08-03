@@ -78,17 +78,16 @@ jobs:
 
           if [ -z "$EXISTING_PR" ]; then
             echo "🚀 Creating draft PR: merge → sandbox"
-            PR_URL=$(gh pr create \
+            gh pr create \
               --base sandbox \
               --head merge \
               --title "Merge main to sandbox [via CI]" \
               --body "Automated PR to stage changes from \`main\` into \`sandbox\` via \`merge\` branch." \
-              --draft \
-              --json url --jq '.url')
+              --draft
 
+            PR_NUMBER=$(gh pr list --base sandbox --head merge --json number --jq '.[0].number')
             echo "🏷️ Adding 'ci' label to PR"
-            gh pr edit "$PR_URL" --add-label "ci"
+            gh pr edit "$PR_NUMBER" --add-label "ci"
           else
             echo "✅ PR already exists: merge → sandbox (#$EXISTING_PR)"
           fi
-
