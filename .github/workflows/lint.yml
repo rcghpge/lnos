@@ -45,15 +45,18 @@ jobs:
           declare -A sc_counts
 
           while IFS= read -r file; do
-            shellcheck --format=json --external-sources --severity=style "$file" 2>/dev/null | \
-            jq -c '.comments[]' | while IFS= read -r comment; do
-              FILE=$(echo "$comment" | jq -r '.file')
-              LINE=$(echo "$comment" | jq -r '.line')
-              COL=$(echo "$comment" | jq -r '.column')
-              CODE=$(echo "$comment" | jq -r '.code')
-              echo "::notice file=$FILE,line=$LINE,col=$COL::$CODE"
-              ((sc_counts["$CODE"]++))
-            done
+            OUTPUT=$(shellcheck --format=json --external-sources --severity=style "$file" 2>/dev/null)
+      
+            if echo "$OUTPUT" | jq -e 'type == "object" and .comments != null' >/dev/null; then
+              echo "$OUTPUT" | jq -c '.comments[]' | while IFS= read -r comment; do
+                FILE=$(echo "$comment" | jq -r '.file')
+                LINE=$(echo "$comment" | jq -r '.line')
+                COL=$(echo "$comment" | jq -r '.column')
+                CODE=$(echo "$comment" | jq -r '.code')
+                echo "::notice file=$FILE,line=$LINE,col=$COL::$CODE"
+                ((sc_counts["$CODE"]++))
+              done
+            fi
           done < shell_files.txt
 
           echo ""
