@@ -205,6 +205,7 @@ More tools will be added based on student feedback.
 * Limited testing on various hardware configurations
 * Some desktop environments may require additional configuration 
 
+---
 
 ## Credits
 
