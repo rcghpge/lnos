@@ -59,7 +59,7 @@ jobs:
           done < shell_files.txt
 
           echo ""
-          echo "📊 ShellCheck Summary (linked to documentation):"
+          echo "📊 ShellCheck Summary (linked to documentation): TODO: shellcheck stdout parsing"
           for code in "${!sc_counts[@]}"; do
             URL="https://www.shellcheck.net/wiki/$code"
             COUNT="${sc_counts[$code]}"
