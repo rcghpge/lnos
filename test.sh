@@ -1,3 +1,3 @@
 #!/bin/bash
 
-echo "testing shell linter"
+echo "set configs on shell linter. running checks"
