@@ -40,25 +40,26 @@ jobs:
         if: steps.list_shell_scripts.outputs.file_count != '0'
         shell: bash
         run: |
+          pacman -S --noconfirm jq
+
           declare -A sc_counts
 
           while IFS= read -r file; do
-            shellcheck --external-sources --severity=style "$file" 2>&1 || true | while IFS= read -r line; do
-              if [[ "$line" =~ ^([^:]+):([0-9]+):([0-9]+):\ ([^:]+):\ (SC[0-9]+) ]]; then
-                FILE="${BASH_REMATCH[1]}"
-                LINE="${BASH_REMATCH[2]}"
-                COL="${BASH_REMATCH[3]}"
-                CODE="${BASH_REMATCH[5]}"
-                echo "::notice file=$FILE,line=$LINE,col=$COL::$CODE"
-                ((sc_counts["$CODE"]++))
-              fi
+            shellcheck --format=json --external-sources --severity=style "$file" 2>/dev/null | \
+            jq -c '.comments[]' | while IFS= read -r comment; do
+              FILE=$(echo "$comment" | jq -r '.file')
+              LINE=$(echo "$comment" | jq -r '.line')
+              COL=$(echo "$comment" | jq -r '.column')
+              CODE=$(echo "$comment" | jq -r '.code')
+              echo "::notice file=$FILE,line=$LINE,col=$COL::$CODE"
+              ((sc_counts["$CODE"]++))
             done
           done < shell_files.txt
 
           echo ""
           echo "📊 ShellCheck Summary (with documentation links):"
           for code in "${!sc_counts[@]}"; do
-            URL="https://www.shellcheck.net/wiki/$code"
             COUNT="${sc_counts[$code]}"
+            URL="https://www.shellcheck.net/wiki/$code"
             echo "🔹 [$code]($URL): $COUNT occurrence(s)"
           done
