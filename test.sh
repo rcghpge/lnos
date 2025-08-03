@@ -1,3 +1,3 @@
 #!/bin/bash
 
-echo "test shellcheck linter on ln stack"
+echo "check runtime on shellcheck to generate a summary"
