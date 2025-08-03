@@ -67,6 +67,7 @@ docker-compose.override.yml
 coverage/
 .coverage
 .pytest_cache/
+*.bak
 
 # GPG keys (security)
 *.gpg
