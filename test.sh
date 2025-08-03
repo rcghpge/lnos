@@ -1,3 +1,3 @@
 #!/bin/bash
 
-echo "testing shellcheck linter on ln stack"
+echo "test shellcheck linter on ln stack"
