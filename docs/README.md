@@ -66,7 +66,7 @@ Click here to see guide on testing: [Testing](testing.md)
 
 The installation below mirrors source tree for official releases. For this version with sandbox development:
 ```bash
-# Clone your fork with full history
+# Clone the GitHub repository
 git clone --origin origin --no-single-branch https://github.com/rcghpge/lnos.git
 cd lnos
 
