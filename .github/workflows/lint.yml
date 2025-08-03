@@ -25,9 +25,8 @@ jobs:
 
       - name: 🧰 Setup Arch packages
         run: |
-          mkdir -p /etc/pacman.d/hooks
-          echo -e "[Trigger]\nOperation = Install\nOperation = Upgrade\nType = Package\nTarget = *\n\n[Action]\nDescription = Dummy hook\nWhen = PostTransaction\nExec = /bin/true" \
-            > /etc/pacman.d/hooks/disable-conditionupdate.hook
+          rm -f /usr/share/libalpm/hooks/30-systemd-update.hook
+          rm -f /usr/share/libalpm/scripts/systemd-hook
 
           pacman -Syu --noconfirm
           pacman -S --noconfirm shellcheck jq bash coreutils findutils grep
