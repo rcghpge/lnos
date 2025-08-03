@@ -3,7 +3,7 @@
 [![CodeQL](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql)
 [![LN OS CI/CD](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml)
 
-### LN OS — Arch Configured. Built at UT.
+### LnOS — Arch Configured. Built at UT.
 
 > *"A UTA flavored distro with all the applications and tools the different engineering majors use."*  
 > — Professor Bakker
@@ -66,7 +66,7 @@ Click here to see guide on testing: [Testing](testing.md)
 
 Pre-built Ln OS ISOs are available with the installer included.
 
-#### Option 1: Download Pre-built ISO
+#### Option 1: Download Pre-built ISO (source tree ISO)
 1. Download the latest release from [GitHub Releases](https://github.com/rcghpge/lnos/releases)
    - `lnos-x86_64-*.iso` for Intel/AMD 64-bit systems
    - `lnos-aarch64-*.iso` for ARM 64-bit systems (Raspberry Pi 4+)
@@ -192,7 +192,7 @@ More tools will be added based on student feedback.
 
 ## Credits
 
-Inspired by Professor Bakker’s and UTA LUG NUTS Community of a vision for a UTA-specific distro.
+Inspired by Professor Bakker’s and UTA LUGNUTS Community of a vision for a UTA-specific distro.
 
 Built on the amazing work of the [Arch Linux community](htttps://archlinux.org).
 Install Files look beautiful from the wonderful tool: [GUM](https://github.com/charmbracelet/gum?tab=readme-ov-file)
