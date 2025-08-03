@@ -47,21 +47,21 @@ jobs:
 
           while IFS= read -r file; do
             shellcheck --external-sources --severity=style "$file" 2>&1 || true | while IFS= read -r line; do
-             if [[ "$line" =~ ^([^:]+):([0-9]+):([0-9]+):\ ([^:]+):\ (SC[0-9]+) ]]; then
-               FILE="${BASH_REMATCH[1]}"
-               LINE="${BASH_REMATCH[2]}"
-               COL="${BASH_REMATCH[3]}"
-               CODE="${BASH_REMATCH[5]}"
-               echo "::notice file=$FILE,line=$LINE,col=$COL::$CODE"
-               ((sc_counts["$CODE"]++))
-             fi
-           done
-         done < shell_files.txt
+              if [[ "$line" =~ ^([^:]+):([0-9]+):([0-9]+):\ ([^:]+):\ (SC[0-9]+) ]]; then
+                FILE="${BASH_REMATCH[1]}"
+                LINE="${BASH_REMATCH[2]}"
+                COL="${BASH_REMATCH[3]}"
+                CODE="${BASH_REMATCH[5]}"
+                echo "::notice file=$FILE,line=$LINE,col=$COL::$CODE"
+                ((sc_counts["$CODE"]++))
+              fi
+            done
+          done < shell_files.txt
 
-         echo ""
-         echo "📊 ShellCheck Summary (linked to documentation):"
-         for code in "${!sc_counts[@]}"; do
-           URL="https://www.shellcheck.net/wiki/$code"
-           COUNT="${sc_counts[$code]}"
-           echo "🔹 [$code]($URL): $COUNT occurrence(s)"
-         done
+          echo ""
+          echo "📊 ShellCheck Summary (linked to documentation):"
+          for code in "${!sc_counts[@]}"; do
+            URL="https://www.shellcheck.net/wiki/$code"
+            COUNT="${sc_counts[$code]}"
+            echo "🔹 [$code]($URL): $COUNT occurrence(s)"
+          done
