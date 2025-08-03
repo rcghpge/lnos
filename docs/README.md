@@ -76,7 +76,7 @@ git branch -r
 git checkout -b sandbox origin/sandbox   # or merge, pr, etc.
 ```
 
-If you're installing the official release or building from source tree start below at Custom ISO Installation for standard setup steps, including ISO flashing and installation from stable source tree builds.
+If you're installing the official release or building from source tree start below at custom ISO installation for standard setup steps, including ISO flashing and installation from stable source tree builds.
 
 ### Custom ISO Installation
 
