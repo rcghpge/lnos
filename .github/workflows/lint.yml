@@ -14,7 +14,7 @@ on:
 
 jobs:
   shellcheck:
-    name: ShellCheck
+    name: Shell Lint
     runs-on: ubuntu-latest
 
     container: archlinux:latest
@@ -28,7 +28,7 @@ jobs:
           pacman -Syu --noconfirm
           pacman -S --noconfirm shellcheck bash coreutils findutils grep
 
-      - name: 🔍 Find shell scripts
+      - name: 🔍 Check for Shell Scripts
         id: list_shell_scripts
         run: |
           find . \( -name "*.sh" -o -name "*.bash" -o -name "*.zsh" \) -type f -not -path "./.git/*" > shell_files.txt
@@ -36,18 +36,29 @@ jobs:
           echo "Found $FILE_COUNT shell script(s)."
           echo "file_count=$FILE_COUNT" >> "$GITHUB_OUTPUT"
 
-      - name: 📋 Run ShellCheck and emit SC codes as ::notice
+      - name: 📋 Run ShellCheck. Generate SC code summary
         if: steps.list_shell_scripts.outputs.file_count != '0'
         shell: bash
         run: |
+          declare -A sc_counts
+
           while IFS= read -r file; do
-            shellcheck --external-sources --severity=style "$file" 2>&1 | while IFS= read -r line; do
+            shellcheck --external-sources --severity=style "$file" 2>&1 || true | while IFS= read -r line; do
               if [[ "$line" =~ ^([^:]+):([0-9]+):([0-9]+):\ ([^:]+):\ (SC[0-9]+) ]]; then
                 FILE="${BASH_REMATCH[1]}"
                 LINE="${BASH_REMATCH[2]}"
                 COL="${BASH_REMATCH[3]}"
                 CODE="${BASH_REMATCH[5]}"
                 echo "::notice file=$FILE,line=$LINE,col=$COL::$CODE"
+                ((sc_counts["$CODE"]++))
               fi
             done
           done < shell_files.txt
+
+          echo ""
+          echo "📊 ShellCheck Summary (with documentation links):"
+          for code in "${!sc_counts[@]}"; do
+            URL="https://www.shellcheck.net/wiki/$code"
+            COUNT="${sc_counts[$code]}"
+            echo "🔹 [$code]($URL): $COUNT occurrence(s)"
+          done
