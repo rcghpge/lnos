@@ -1,0 +1,85 @@
+name: Merge
+
+on:
+  push:
+    branches: [merge]
+  workflow_dispatch:
+  schedule:
+    # Runs every Friday at 4 AM CST (10:00 UTC)
+    - cron: '0 10 * * 5'
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  stage-merges:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Stage merges with Arch Linux container
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          docker run --rm -v "$(pwd)":/repo -w /repo archlinux:base bash -c '
+            echo "🧰 Installing required packages..."
+            pacman -Syu --noconfirm git jq curl tar base-devel
+
+            echo "🔧 Installing GitHub CLI..."
+            VERSION=$(curl -s https://api.github.com/repos/cli/cli/releases/latest | jq -r .tag_name)
+            FILENAME="gh_${VERSION#v}_linux_amd64.tar.gz"
+            DOWNLOAD_URL="https://github.com/cli/cli/releases/download/${VERSION}/${FILENAME}"
+            curl -LO "$DOWNLOAD_URL"
+            tar -xzf "$FILENAME"
+            cp gh_${VERSION#v}_linux_amd64/bin/gh /usr/local/bin/
+            gh --version
+
+            echo "🔐 Configuring Git..."
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
+            git fetch origin main merge sandbox
+            git checkout merge
+
+            echo "🧪 CI workflow checks..."
+            for f in .github/workflows/ci-main.yml .github/workflows/ci-sandbox.yml; do
+              if [ -f "$f" ]; then
+                echo "❌ Forbidden CI file found: $f"
+                exit 1
+              fi
+            done
+
+            echo "🔄 Merging origin/main to merge..."
+            git merge origin/main --no-edit --strategy=recursive -X ours || {
+              echo "❌ Merge conflict detected. Aborting."
+              git merge --abort
+              exit 1
+            }
+
+            echo "🚀 Pushing merge branch..."
+            git push origin merge
+
+            echo "🔍 Checking for existing PR: merge → sandbox"
+            EXISTING_PR=$(gh pr list --base sandbox --head merge --json number --jq ".[0].number")
+
+            if [ -z "$EXISTING_PR" ]; then
+              echo "📦 Creating draft PR..."
+              gh pr create --base sandbox --head merge \
+                --title "Merge main to sandbox [via CI]" \
+                --body "Automated PR to stage changes from \`main\` to \`sandbox\` via \`merge\` branch." \
+                --draft
+
+              PR_NUM=$(gh pr list --base sandbox --head merge --json number --jq ".[0].number")
+              gh pr edit "$PR_NUM" --add-label "ci"
+            else
+              echo "✅ PR already exists (#$EXISTING_PR)"
+            fi
+          '
+
