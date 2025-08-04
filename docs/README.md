@@ -1,5 +1,6 @@
 # lnos
 
+[![Sandbox](https://github.com/rcghpge/lnos/actions/workflows/ci-sandbox.yml/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/ci-sandbox.yml)
 [![CodeQL](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql)
 [![LN OS CI/CD](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml)
 
