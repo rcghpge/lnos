@@ -87,8 +87,19 @@ Pre-built Ln OS ISOs are available with the installer included.
 1. Download the latest release from [GitHub Releases](https://github.com/uta-lug-nuts/LnOS/releases)
    - `lnos-x86_64-*.iso` for Intel/AMD 64-bit systems
    - `lnos-aarch64-*.iso` for ARM 64-bit systems (Raspberry Pi 4+)
+   - `*.asc` signature files for verification
 
-2. Create bootable USB:
+2. **Verify digital signature** (recommended):
+   ```bash
+   # Quick verification (auto-imports key)
+   curl -fsSL https://raw.githubusercontent.com/bakkertj/LnOS/main/scripts/verify-signature.sh | bash -s -- lnos-*.iso
+   
+   # Manual verification
+   curl -fsSL https://raw.githubusercontent.com/bakkertj/LnOS/main/keys/lnos-public-key.asc | gpg --import
+   gpg --verify lnos-*.iso.asc lnos-*.iso
+   ```
+
+3. Create bootable USB:
    ```bash
    # Linux/macOS
    sudo dd if=lnos-x86_64-*.iso of=/dev/sdX bs=4M status=progress

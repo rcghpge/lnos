@@ -69,10 +69,14 @@ coverage/
 .pytest_cache/
 *.bak
 
-# GPG keys (security)
+# GPG private keys (security) - but allow public keys in keys/ directory
 *.gpg
-*.asc
+*private*.asc
+*secret*.asc
 private-keys/
+# Allow public keys in keys/ directory
+!keys/*public*.asc
+!keys/lnos-public-key.asc
 
 # Custom ISOs with different names
 lnos-*.iso
