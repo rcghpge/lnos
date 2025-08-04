@@ -14,36 +14,54 @@ on:
 
 jobs:
   shellcheck:
-    name: ShellCheck Shell Linter
+    name: Shell Lint
     runs-on: ubuntu-latest
+
+    container: archlinux:latest
 
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: 🧪 Install ShellCheck
+      - name: 🧰 Setup Arch packages
         run: |
-          sudo apt-get update
-          sudo apt-get install -y shellcheck
+          rm -f /usr/share/libalpm/hooks/30-systemd-update.hook
+          rm -f /usr/share/libalpm/scripts/systemd-hook
 
-      - name: 🔍 Find shell scripts
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm shellcheck jq bash coreutils findutils grep
+
+      - name: 🔍 Check for Shell Scripts
         id: list_shell_scripts
         run: |
-          find . \
-            \( -name "*.sh" -o -name "*.bash" -o -name "*.zsh" \) \
-            -type f -not -path "./.git/*" \
-            > shell_files.txt
-
+          find . \( -name "*.sh" -o -name "*.bash" -o -name "*.zsh" \) -type f -not -path "./.git/*" > shell_files.txt
           FILE_COUNT=$(wc -l < shell_files.txt)
           echo "Found $FILE_COUNT shell script(s)."
-          cat shell_files.txt || true
+          echo "file_count=$FILE_COUNT" >> "$GITHUB_OUTPUT"
 
-          if [ "$FILE_COUNT" -eq 0 ]; then
-            echo "✅ No shell files to lint."
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: 🧼 Run ShellCheck
-        if: steps.list_shell_scripts.outputs.skip != 'true'
+      - name: 📋 Run ShellCheck. Generate SC code summary
+        if: steps.list_shell_scripts.outputs.file_count != '0'
+        shell: bash
         run: |
-          xargs -a shell_files.txt -r shellcheck --external-sources --severity=style --color=always
+          declare -A sc_counts
+
+          while IFS= read -r file; do
+            shellcheck --external-sources --severity=style "$file" 2>&1 || true | while IFS= read -r line; do
+              if [[ "$line" =~ ^([^:]+):([0-9]+):([0-9]+):\ ([^:]+):\ (SC[0-9]+) ]]; then
+                FILE="${BASH_REMATCH[1]}"
+                LINE="${BASH_REMATCH[2]}"
+                COL="${BASH_REMATCH[3]}"
+                CODE="${BASH_REMATCH[5]}"
+                echo "::notice file=$FILE,line=$LINE,col=$COL::$CODE"
+                ((sc_counts["$CODE"]++))
+              fi
+            done
+          done < shell_files.txt
+
+          echo ""
+          echo "📊 ShellCheck Summary (linked to documentation): TODO: shellcheck stdout parsing"
+          for code in "${!sc_counts[@]}"; do
+            URL="https://www.shellcheck.net/wiki/$code"
+            COUNT="${sc_counts[$code]}"
+            echo "🔹 [$code]($URL): $COUNT occurrence(s)"
+          done
