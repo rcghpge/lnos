@@ -29,88 +29,90 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
-          docker run --rm -v "$(pwd)":/repo -w /repo archlinux:base bash -c '
-            echo "🧰 Installing required packages..."
-            pacman -Syu --noconfirm git jq curl tar base-devel
+          docker run --rm \
+            -e GH_TOKEN="$GH_TOKEN" \
+            -e GITHUB_REPOSITORY="$GITHUB_REPOSITORY" \
+            -v "$(pwd)":/repo -w /repo archlinux:base bash -c '
+              echo "🧰 Installing required packages..."
+              pacman -Syu --noconfirm git jq curl tar base-devel
 
-            echo "🔧 Installing GitHub CLI..."
-            VERSION=$(curl -s https://api.github.com/repos/cli/cli/releases/latest | jq -r ".tag_name")
+              echo "🔧 Installing GitHub CLI..."
+              VERSION=$(curl -s https://api.github.com/repos/cli/cli/releases/latest | jq -r ".tag_name")
 
-            if [ -z "$VERSION" ]; then
-              echo "❌ Failed to fetch GitHub CLI version. Exiting."
-              exit 1
-            fi
-
-            FILENAME="gh_${VERSION#v}_linux_amd64.tar.gz"
-            DOWNLOAD_URL="https://github.com/cli/cli/releases/download/${VERSION}/${FILENAME}"
-
-            echo "📥 Downloading from: $DOWNLOAD_URL"
-            curl -LO "$DOWNLOAD_URL" || {
-              echo "❌ Failed to download GitHub CLI tarball"
-              exit 1
-            }
-
-            mkdir -p gh-cli && tar -xzf "$FILENAME" -C gh-cli --strip-components=1 || {
-              echo "❌ Failed to extract GitHub CLI tarball"
-              exit 1
-            }
-
-            cp gh-cli/bin/gh /usr/local/bin/ || {
-              echo "❌ Failed to move gh binary"
-              exit 1
-            }
-
-            gh --version || {
-              echo "❌ gh not found after install"
-              exit 1
-            }
-
-            echo "🔐 Configuring Git..."
-            git config --global --add safe.directory /repo
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-            if [ -z "$GITHUB_REPOSITORY" ]; then
-              echo "❌ GITHUB_REPOSITORY env var is missing"
-              exit 1
-            fi
-
-            git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
-            git fetch origin main merge sandbox
-            git checkout merge
-
-            echo "🧪 CI workflow checks..."
-            for f in .github/workflows/ci-main.yml .github/workflows/ci-sandbox.yml; do
-              if [ -f "$f" ]; then
-                echo "❌ Forbidden CI file found: $f"
+              if [ -z "$VERSION" ]; then
+                echo "❌ Failed to fetch GitHub CLI version. Exiting."
                 exit 1
               fi
-            done
 
-            echo "🔄 Merging origin/main to merge..."
-            git merge origin/main --no-edit --strategy=recursive -X ours || {
-              echo "❌ Merge conflict detected. Aborting."
-              git merge --abort
-              exit 1
-            }
+              FILENAME="gh_${VERSION#v}_linux_amd64.tar.gz"
+              DOWNLOAD_URL="https://github.com/cli/cli/releases/download/${VERSION}/${FILENAME}"
 
-            echo "🚀 Pushing merge branch..."
-            git push origin merge
+              echo "📥 Downloading from: $DOWNLOAD_URL"
+              curl -LO "$DOWNLOAD_URL" || {
+                echo "❌ Failed to download GitHub CLI tarball"
+                exit 1
+              }
 
-            echo "🔍 Checking for existing PR: merge → sandbox"
-            EXISTING_PR=$(gh pr list --base sandbox --head merge --json number --jq ".[0].number")
+              mkdir -p gh-cli && tar -xzf "$FILENAME" -C gh-cli --strip-components=1 || {
+                echo "❌ Failed to extract GitHub CLI tarball"
+                exit 1
+              }
 
-            if [ -z "$EXISTING_PR" ]; then
-              echo "📦 Creating draft PR..."
-              gh pr create --base sandbox --head merge \
-                --title "Merge main to sandbox [via CI]" \
-                --body "Automated PR to stage changes from \`main\` to \`sandbox\` via \`merge\` branch." \
-                --draft
+              cp gh-cli/bin/gh /usr/local/bin/ || {
+                echo "❌ Failed to move gh binary"
+                exit 1
+              }
 
-              PR_NUM=$(gh pr list --base sandbox --head merge --json number --jq ".[0].number")
-              gh pr edit "$PR_NUM" --add-label "ci"
-            else
-              echo "✅ PR already exists (#$EXISTING_PR)"
-            fi
-          '
+              gh --version || {
+                echo "❌ gh not found after install"
+                exit 1
+              }
 
+              echo "🔐 Configuring Git..."
+              git config --global --add safe.directory /repo
+              git config user.name "github-actions[bot]"
+              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+              if [ -z "$GITHUB_REPOSITORY" ]; then
+                echo "❌ GITHUB_REPOSITORY env var is missing"
+                exit 1
+              fi
+
+              git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
+              git fetch origin main merge sandbox
+              git checkout merge
+
+              echo "🧪 CI workflow checks..."
+              for f in .github/workflows/ci-main.yml .github/workflows/ci-sandbox.yml; do
+                if [ -f "$f" ]; then
+                  echo "❌ Forbidden CI file found: $f"
+                  exit 1
+                fi
+              done
+
+              echo "🔄 Merging origin/main to merge..."
+              git merge origin/main --no-edit --strategy=recursive -X ours || {
+                 echo "❌ Merge conflict detected. Aborting."
+                 git merge --abort
+                 exit 1
+              }
+
+              echo "🚀 Pushing merge branch..."
+              git push origin merge
+
+              echo "🔍 Checking for existing PR: merge → sandbox"
+              EXISTING_PR=$(gh pr list --base sandbox --head merge --json number --jq ".[0].number")
+
+              if [ -z "$EXISTING_PR" ]; then
+                echo "📦 Creating draft PR..."
+                gh pr create --base sandbox --head merge \
+                  --title "Merge main to sandbox [via CI]" \
+                  --body "Automated PR to stage changes from \`main\` to \`sandbox\` via \`merge\` branch." \
+                  --draft
+
+                PR_NUM=$(gh pr list --base sandbox --head merge --json number --jq ".[0].number")
+                gh pr edit "$PR_NUM" --add-label "ci"
+              else
+                echo "✅ PR already exists (#$EXISTING_PR)"
+              fi
+            '
