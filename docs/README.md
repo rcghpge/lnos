@@ -1,5 +1,6 @@
 # lnos
 
+[![ShellCheck](https://github.com/rcghpge/lnos/actions/workflows/lint.yml/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/lint.yml)
 [![CodeQL](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql)
 [![LnOS CI/CD](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml)
 
