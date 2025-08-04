@@ -26,6 +26,20 @@
 
 set -e
 
+# Make user connect to internet
+
+echo "Please connect to the internet"
+
+while true; do
+    if nmcli general status | grep -q "connected"; then
+        echo "user connected to internet"
+        break
+    else
+        nmtui
+    fi
+done
+
+
 if ! command -v gum &> /dev/null; then
     echo "Installing gum..."
     pacman -Sy --noconfirm gum
@@ -39,7 +53,7 @@ gum_echo()
 }
 gum_error()
 {
-    gum style --border double --margin "1 2" --padding "2 4"  --border-foreground 1 "$@"
+    gum style --border double --margin "1 2" --padding "2 4" --border-foreground 1 "$@"
 }
 gum_complete()
 {
@@ -56,11 +70,18 @@ setup_desktop_and_packages()
 
     # Desktop Environment Installation
     while true; do
-			DE_CHOICE=$(gum choose --header 'Choose your Desktop Environment (DE):' 'Gnome(good for beginners, similar to mac)" "KDE(good for beginners, similar to windows)' 'Hyprland(Tiling WM, basic dotfiles but requires more DIY)' 'DWM(similar to Hyprland)' 'TTY (no install required)')
-			if [[ "$DE_CHOICE" == "TTY (no install required)" ]]; then
-						gum_echo "TTY is preinstalled !"
+		DE_CHOICE=$(gum choose --header "Choose your Desktop Environment (DE):" \
+            "Gnome(good for beginners, similar to mac)" \
+            "KDE(good for beginners, similar to windows)" \
+            "Hyprland(Tiling WM, basic dotfiles but requires more DIY)" \
+            "DWM(similar to Hyprland)" \
+            "TTY (no install required)")
+            
+		if [[ "$DE_CHOICE" == "TTY (no install required)" ]]; then
+			echo "TTY is preinstalled !"
             break
         fi
+        
         gum confirm "You selected: $DE_CHOICE. Proceed with installation?" && break
         gum_echo "Returning to selection menu..."
     done
@@ -101,12 +122,12 @@ setup_desktop_and_packages()
     done
 
     # Ensure base-devel is installed for AUR package building
-  	gum spin --spinner dot --title "Installing developer tools needed for packages" pacman -S --noconfirm base-devel
+  	gum spin --spinner dot --title "Installing developer tools needed for packages" -- pacman -S --noconfirm base-devel
 
     # Create a temporary directory for AUR package building
-    #AUR_DIR="/tmp/aur_build"
-    #mkdir -p "$AUR_DIR"
-    #chown "$username" "$AUR_DIR"
+    # AUR_DIR="/tmp/aur_build"
+    # mkdir -p "$AUR_DIR"
+    # chown "$username" "$AUR_DIR"
 
     case "$THEME" in
         "CSE")
@@ -115,7 +136,7 @@ setup_desktop_and_packages()
                 exit 1
             fi
 
-						# choose packages from CSE list (PACMAN)
+			# Choose packages from CSE list (PACMAN)
             PACMAN_PACKAGES=$(cat /root/LnOS/pacman_packages/CSE_packages.txt | gum choose --no-limit --header "Select Pacman Packages to Install:")
             PACMAN_PACKAGES=$(echo "$PACMAN_PACKAGES" | tr '\n' ' ')
             if [ -n "$PACMAN_PACKAGES" ]; then
@@ -428,8 +449,8 @@ prepare_arm()
 
     # Partition the SD card
     parted "$DISK" mklabel msdos
-    parted "$DISK" mkpart primary fat32 1MiB 513MiB
-    parted "$DISK" mkpart primary btrfs 513MiB 100%
+    parted "$DISK" mkpart primary fat32 1MiB 257MiB
+    parted "$DISK" mkpart primary btrfs 257MiB 100%
 
     # Format partitions
     mkfs.fat -F32 "${DISK}p1"
@@ -471,6 +492,8 @@ prepare_arm()
     umount -R /mnt
     gum style --border normal --margin "1" --padding "1" --border-foreground 212 "SD card preparation complete. Insert into Raspberry Pi and boot."
 }
+
+setup_desktop_and_packages
 
 # Main logic
 if [ "$1" = "--target=x86_64" ]; then
