@@ -1,4 +1,4 @@
-name: Generate README badges
+name: Generate README Badges
 
 on:
   push:
@@ -9,11 +9,11 @@ permissions:
   contents: write
 
 jobs:
-  update-readme:
+  update-readme-badges:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -23,37 +23,64 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Set correct badge block to docs/README.md
+      - name: Inject branch-specific badge block into docs/README.md
         run: |
           BRANCH=$(git rev-parse --abbrev-ref HEAD)
-          TEMPLATE=".readme-badges/README.badge.$BRANCH.md"
           README="docs/README.md"
-
-          if [ ! -f "$TEMPLATE" ]; then
-            echo "⚠️ No badge template found for branch: $BRANCH"
-            exit 0
-          fi
 
           if [ ! -f "$README" ]; then
             echo "❌ $README not found"
             exit 1
           fi
 
-          echo "🔁 Setting badge from $TEMPLATE into $README"
+          case "$BRANCH" in
+            main)
+              CI_LABEL="LnOS CI/CD"
+              CI_FILE="ci-main"
+              ;;
+            sandbox)
+              CI_LABEL="Sandbox"
+              CI_FILE="ci-sandbox"
+              ;;
+            merge)
+              CI_LABEL="Merge"
+              CI_FILE="ci-merge"
+              ;;
+            *)
+              echo "⚠️ Unknown branch: $BRANCH"
+              exit 0
+              ;;
+          esac
 
-          awk '/^## CI Status/{flag=1; print; next}
-               /^## /{flag=0}
-               !flag' "$README" > README.temp.md
+          echo "📦 Generating badge block for $BRANCH..."
 
-          echo >> README.temp.md
-          cat "$TEMPLATE" >> README.temp.md
+          BADGE_BLOCK=$(cat <<EOF
+# lnos
 
-          if ! cmp -s "$README" README.temp.md; then
-            mv README.temp.md "$README"
+[![${CI_LABEL}](https://github.com/rcghpge/lnos/actions/workflows/${CI_FILE}.yml/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/${CI_FILE}.yml)
+[![CodeQL](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql)
+[![LnOS CI/CD](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml)
+
+EOF
+)
+
+          awk '
+            BEGIN {printed=0; in_badge=0}
+            /^# lnos/ {print; in_badge=1; next}
+            /^\[!\[.*\]\(https:\/\/github\.com\/rcghpge\/lnos\/actions\// {
+              if (in_badge) next
+            }
+            {in_badge=0; print}
+          ' "$README" > README.temp.md
+
+          echo "$BADGE_BLOCK" | cat - README.temp.md > README.final.md
+
+          if ! cmp -s "$README" README.final.md; then
+            mv README.final.md "$README"
             git add "$README"
-            git commit -m "🤖 Auto-update badge block in docs/README.md for branch: $BRANCH"
+            git commit -m "🤖 Auto-update CI badge block for $BRANCH"
             git push
           else
-            echo "✅ docs/README.md already up-to-date with correct badge block"
+            echo "✅ README.md already up to date"
           fi
 
