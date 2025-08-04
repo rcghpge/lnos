@@ -1,0 +1,52 @@
+name: Generate README badges
+
+on:
+  push:
+    branches: [main, sandbox, merge]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Git config
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Set correct badge block
+        run: |
+          BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          TEMPLATE=".readme-badges/README.badge.$BRANCH.md"
+
+          if [ ! -f "$TEMPLATE" ]; then
+            echo "⚠️ No badge template found for branch: $BRANCH"
+            exit 0
+          fi
+
+          echo "🔁 Setting badge from $TEMPLATE into README.md"
+
+          awk '/^## CI Status/{flag=1; print; next}
+               /^## /{flag=0}
+               !flag' README.md > README.temp.md
+
+          echo >> README.temp.md
+          cat "$TEMPLATE" >> README.temp.md
+
+          if ! cmp -s README.md README.temp.md; then
+            mv README.temp.md README.md
+            git add README.md
+            git commit -m "🤖 Auto-update badge block for branch: $BRANCH"
+            git push
+          else
+            echo "✅ README.md already up-to-date with correct badge block"
+          fi
+
