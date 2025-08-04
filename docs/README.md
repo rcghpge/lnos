@@ -214,3 +214,8 @@ Inspired by Professor Bakker’s and UTA LUGNUTS Community of a vision for a UTA
 
 Built on the amazing work of the [Arch Linux community](https://archlinux.org).
 Install Files look beautiful from the wonderful tool: [GUM](https://github.com/charmbracelet/gum?tab=readme-ov-file)
+
+## CI Status
+
+![CI (merge)](https://github.com/rcghpge/lnos/actions/workflows/ci-merge.yml/badge.svg?branch=merge)
+
