@@ -233,7 +233,7 @@ jobs:
           echo "🔐 Signing release files with GPG..."
           
           # Import the private key
-          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+          echo "$GPG_PRIVATE_KEY" | base64 --decode | gpg --batch --import
           
           # Get key ID for verification
           KEY_ID=$(gpg --list-secret-keys --with-colons | awk -F: '/^sec:/ {print $5}' | head -1)
