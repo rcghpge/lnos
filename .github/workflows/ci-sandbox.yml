@@ -1,0 +1,101 @@
+name: Sandbox
+
+on:
+  push:
+    branches: [sandbox]
+  schedule:
+  - cron: '0 6 * * 1'  # Runs Mondays at 12 AM CST midnight (06:00 UTC)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  build-sandbox:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout sandbox branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: sandbox
+          persist-credentials: false
+
+      - name: Set Git credentials for GH bots
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+
+      - name: Set sandbox
+        run: |
+          git restore --source=origin/sandbox .github/workflows/ci-sandbox.yml || echo "ci-sandbox.yml not found"
+          git restore --source=origin/sandbox sandbox/install.sh || echo "install.sh not found"
+
+      - name: Sandbox checks for builds
+        run: |
+          ALLOWED_FILES=(
+          ".github/workflows/ci-sandbox.yml"
+          "sandbox/install.sh"
+          )
+
+          DIFF_FILES=$(git diff --name-only origin/merge...HEAD)
+          echo "::notice::🔍 DIFF_FILES: $DIFF_FILES"
+
+          UNEXPECTED_FILES=()
+          for FILE in $DIFF_FILES; do
+            FOUND=false
+            for ALLOWED in "${ALLOWED_FILES[@]}"; do
+              if [[ "$FILE" == "$ALLOWED" ]]; then
+                FOUND=true
+                break
+              fi
+            done
+            if ! $FOUND; then
+              UNEXPECTED_FILES+=("$FILE")
+            fi
+          done
+
+          if [ "${#UNEXPECTED_FILES[@]}" -gt 0 ]; then
+            if [ "${{ github.actor }}" != "rcghpge" ]; then
+               echo "::notice::🔔 Unexpected changes detected in: ${UNEXPECTED_FILES[*]}"
+               git diff
+               exit 1
+            else
+              echo "::notice::⚠️ Bypass enabled for trusted actor: ${{ github.actor }}. Allowing unexpected files."
+            fi
+          else
+            echo "✅ Sandbox checks complete."
+          fi
+
+      - name: Build sandbox
+        run: |
+          DENIED_FILES=(
+            ".github/workflows/ci-main.yml"
+            ".github/workflows/ci-merge.yml"
+          )
+
+          for FILE in "${DENIED_FILES[@]}"; do
+            if [ -f "$FILE" ]; then
+              echo "::error::🚫 Denied file detected in sandbox: $FILE"
+              exit 1
+            fi
+          done
+
+      - name: Final checks
+        run: |
+          git add .github/workflows/ci-sandbox.yml sandbox/install.sh
+          git commit -m "Apply sandbox overrides" || echo "Nothing to commit"
+
+      #- name: Tag sandbox pre-release (beta testing)
+      #  run: |
+      #    TIMESTAMP=$(date +%Y%m%d%H%M%S)
+      #    SHORT_SHA=$(git rev-parse --short HEAD)
+      #    PRERELEASE_TAG="v0.1.0-sandbox+${TIMESTAMP}-${SHORT_SHA}"
+      #    git tag "$PRERELEASE_TAG"
+      #    git push origin "$PRERELEASE_TAG"
+      #    echo "🏷️ Tagged sandbox pre-release: $PRERELEASE_TAG"
+
+
