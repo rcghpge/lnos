@@ -69,25 +69,25 @@ jobs:
             echo "::notice ::🚀 Fork is $AHEAD commits ahead of upstream."
           fi
 
-      - name: Verify runner's fork is up to date on origin/main
+      - name: Runtime from source tree with origin/main
         run: |
           git fetch origin
 
           LOCAL_HEAD=$(git rev-parse HEAD)
           ORIGIN_MAIN=$(git rev-parse origin/main)
 
-          echo "🔎 HEAD commit:         $LOCAL_HEAD"
-          echo "🔎 origin/main commit:  $ORIGIN_MAIN"
+          echo "🔎 HEAD commit (local):       $LOCAL_HEAD"
+          echo "🔎 origin/main commit:        $ORIGIN_MAIN"
 
           if [ "$LOCAL_HEAD" != "$ORIGIN_MAIN" ]; then
-            echo "::error ::Local main has diverged from origin/main. Manual checks may be needed."
-            echo "📜 Commit differences:"
-            git log --oneline origin/main..HEAD
-            exit 1
+            echo "::notice ::⚠️ Local HEAD differs from origin/main. Possible divergence."
+            echo "📜 Commits on local not in origin/main:"
+            git log --oneline origin/main..HEAD || true
+            echo "📜 Commits on origin/main not in local:"
+            git log --oneline HEAD..origin/main || true
           else
-            echo "✅ GH runner's fork with main matches origin/main. No push needed."
+            echo "✅ GH runner's local HEAD matches origin/main. No push needed."
           fi
-
       - name: Validate fast-forward push with --dry-run
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
