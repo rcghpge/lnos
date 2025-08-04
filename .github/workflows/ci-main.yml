@@ -35,10 +35,11 @@ jobs:
 
       - name: Set GitHub authentications for GH runners (bots)
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_PAT: ${{ secrets.PAT_TOKEN }}
         run: |
-          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
-
+          git remote set-url origin https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}.git
+          git push origin main
+          
       - name: Add upstream and fetch
         run: |
           git remote add upstream https://github.com/uta-lug-nuts/LnOS.git
