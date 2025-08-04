@@ -1,0 +1,72 @@
+name: ShellCheck
+
+on:
+  push:
+    paths:
+      - '**/*.sh'
+      - '**/*.bash'
+      - '**/*.zsh'
+  pull_request:
+    paths:
+      - '**/*.sh'
+      - '**/*.bash'
+      - '**/*.zsh'
+
+jobs:
+  shellcheck:
+    name: Shell Lint
+    runs-on: ubuntu-latest
+
+    container: archlinux:latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🧰 Setup Arch packages
+        run: |
+          rm -f /usr/share/libalpm/hooks/30-systemd-update.hook
+          rm -f /usr/share/libalpm/scripts/systemd-hook
+
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm shellcheck jq bash coreutils findutils grep
+
+      - name: 🔍 Check for Shell Scripts
+        id: list_shell_scripts
+        run: |
+          find . \( -name "*.sh" -o -name "*.bash" -o -name "*.zsh" \) -type f -not -path "./.git/*" > shell_files.txt
+          FILE_COUNT=$(wc -l < shell_files.txt)
+          echo "Found $FILE_COUNT shell script(s)."
+          echo "file_count=$FILE_COUNT" >> "$GITHUB_OUTPUT"
+
+      - name: 📋 Run ShellCheck. Generate SC code summary
+        if: steps.list_shell_scripts.outputs.file_count != '0'
+        shell: bash
+        run: |
+          pacman -S --noconfirm jq
+
+          declare -A sc_counts
+
+          while IFS= read -r file; do
+            OUTPUT=$(shellcheck --format=json --external-sources --severity=style "$file" 2>/dev/null)
+      
+            if echo "$OUTPUT" | jq -e 'type == "object" and .comments != null' >/dev/null; then
+              echo "$OUTPUT" | jq -c '.comments[]' | while IFS= read -r comment; do
+                FILE=$(echo "$comment" | jq -r '.file')
+                LINE=$(echo "$comment" | jq -r '.line')
+                COL=$(echo "$comment" | jq -r '.column')
+                CODE=$(echo "$comment" | jq -r '.code')
+                echo "::notice file=$FILE,line=$LINE,col=$COL::$CODE"
+                ((sc_counts["$CODE"]++))
+              done
+            fi
+          done < shell_files.txt
+
+          echo ""
+          echo "📊 ShellCheck Summary (with documentation links):"
+          for code in "${!sc_counts[@]}"; do
+            COUNT="${sc_counts[$code]}"
+            URL="https://www.shellcheck.net/wiki/$code"
+            echo "🔹 [$code]($URL): $COUNT occurrence(s)"
+          done
+          exit 0
