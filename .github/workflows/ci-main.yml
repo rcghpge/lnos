@@ -47,11 +47,11 @@ jobs:
           GH_PAT: ${{ secrets.PAT_TOKEN }}
         run: |
           curl -s -H "Authorization: Bearer ${GH_PAT}" \
-             https://api.github.com/repos/rcghpge/lnos \
-        | grep '"full_name": "rcghpge/lnos"' || {
-          echo "::error ::PAT failed to authenticate or does not have access to rcghpge/lnos."
-          exit 1
-        }
+               https://api.github.com/repos/rcghpge/lnos \
+          | grep '"full_name": "rcghpge/lnos"' || {
+            echo "::error ::PAT failed to authenticate or does not have access to rcghpge/lnos."
+            exit 1
+          }
           
       - name: Add upstream and fetch
         run: |
