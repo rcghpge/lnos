@@ -41,14 +41,17 @@ jobs:
           git remote set-url origin https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}.git
           git push origin main
 
-      - name: Validate PAT Auth
+
+      - name: Validate PAT Auth 
         env:
           GH_PAT: ${{ secrets.PAT_TOKEN }}
         run: |
-          curl -H "Authorization: Bearer ${GH_PAT}" https://api.github.com/user/repos | grep '"full_name"' || {
-            echo "::error ::PAT failed to authenticate."
-            exit 1
-          }
+          curl -s -H "Authorization: Bearer ${GH_PAT}" \
+             https://api.github.com/repos/rcghpge/lnos \
+        | grep '"full_name": "rcghpge/lnos"' || {
+          echo "::error ::PAT failed to authenticate or does not have access to rcghpge/lnos."
+          exit 1
+        }
           
       - name: Add upstream and fetch
         run: |
