@@ -70,10 +70,12 @@ coverage/
 *.bak
 
 # GPG private keys (security) - but allow public keys in keys/ directory
+.gnupg/
 *.gpg
 *private*.asc
 *secret*.asc
 private-keys/
+
 # Allow public keys in keys/ directory
 !keys/*public*.asc
 !keys/lnos-public-key.asc
