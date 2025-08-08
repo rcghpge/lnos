@@ -45,7 +45,7 @@ jobs:
           fi
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Build x86_64 ISO in Docker
+      - name: x86_64 ISO Builds in Docker
         run: |
           docker run --rm --privileged \
             --cap-add=ALL \
@@ -65,15 +65,20 @@ jobs:
               ./build-iso.sh x86_64
             "
 
-      - name: Rename ISO to sandbox format
+      - name: Set ISO Tags for Sandbox ISOs
         run: |
           mkdir -p out
           ISO=$(ls out/*.iso | head -n1)
           NEWNAME="lnos-${{ steps.version.outputs.VERSION }}-x86_64-sandbox.iso"
+          
+          # Fix permissions in case mkarchiso ran as root inside container
+          sudo chown "$(id -u):$(id -g)" "$ISO"
+          
           mv "$ISO" "out/$NEWNAME"
           echo "✅ Renamed ISO to: $NEWNAME"
 
-      - name: GPG sign ISO
+
+      - name: GPG signatures for Sandbox ISOs
         run: |
           gpg --batch --yes --pinentry-mode loopback \
             --output out/lnos-${{ steps.version.outputs.VERSION }}-x86_64-sandbox.iso.asc \
@@ -83,14 +88,14 @@ jobs:
           GPG_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
-      - name: Upload ISO artifact
+      - name: Generate ISO artifacts
         uses: actions/upload-artifact@v4
         with:
           name: lnos-${{ steps.version.outputs.VERSION }}-x86_64-sandbox
           path: out/*
           retention-days: 30
 
-      - name: Create Git tag for ISO (optional)
+      - name: Generate Git Tags
         if: github.ref == 'refs/heads/sandbox'
         run: |
           TAG_NAME="sandbox-${{ steps.version.outputs.VERSION }}"
@@ -118,7 +123,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build aarch64 images in Docker
+      - name: AArch64 build images in Docker
         run: |
           docker run --rm --privileged \
             --cap-add=ALL \
