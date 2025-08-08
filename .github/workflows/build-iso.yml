@@ -1,12 +1,16 @@
 name: Build LnOS Sandbox ISO
-# These sandbox ISOs build at sandbox branch only. It is for LnOS base system development
-# Test/debugging of LnOS base system for x86_64 architectures. WIP
+# Sandbox ISO builder for development/testing. Triggered on sandbox push, tag, or manual dispatch.
 
 on:
   push:
     branches: [sandbox]
-    tags:
-      - 'sandbox-*'
+    paths:
+      - 'archiso/**'
+      - 'scripts/**'
+      - '.github/workflows/build-sandbox-iso.yml'
+      - '*.sh'
+  tags:
+    - 'sandbox-*'
   workflow_dispatch:
     inputs:
       architecture:
@@ -45,7 +49,7 @@ jobs:
           fi
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: x86_64 ISO Builds in Docker
+      - name: x86_64 ISO Builds in Docker (with UID/GID checks)
         run: |
           docker run --rm --privileged \
             --cap-add=ALL \
@@ -56,27 +60,28 @@ jobs:
             -v /proc:/proc \
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
+            -e HOST_UID=$(id -u) \
+            -e HOST_GID=$(id -g) \
             archlinux:latest \
-            bash -c "
+            bash -c '
               pacman -Syu --noconfirm
-              pacman -S --noconfirm base-devel git archiso grub gnupg
-              chmod +x build-iso.sh
-              chmod +x archiso/airootfs/root/customize_airootfs.sh || true
-              ./build-iso.sh x86_64
-            "
+              pacman -S --noconfirm base-devel git archiso grub gnupg sudo
+              useradd -u $HOST_UID -g $HOST_GID -m builder || true
+              chown -R builder:builder /workspace
+              sudo -u builder bash -c "
+                chmod +x build-iso.sh
+                chmod +x archiso/airootfs/root/customize_airootfs.sh || true
+                ./build-iso.sh x86_64
+              "
+            '
 
       - name: Set ISO Tags for Sandbox ISOs
         run: |
           mkdir -p out
           ISO=$(ls out/*.iso | head -n1)
           NEWNAME="lnos-${{ steps.version.outputs.VERSION }}-x86_64-sandbox.iso"
-          
-          # Fix permissions in case mkarchiso ran as root inside container
-          sudo chown "$(id -u):$(id -g)" "$ISO"
-          
           mv "$ISO" "out/$NEWNAME"
           echo "✅ Renamed ISO to: $NEWNAME"
-
 
       - name: GPG signatures for Sandbox ISOs
         run: |
@@ -141,7 +146,7 @@ jobs:
               ./build-arm-image.sh rpi4
             '
 
-      - name: Upload aarch64 images
+      - name: Generate aarch64 images
         uses: actions/upload-artifact@v4
         with:
           name: lnos-aarch64-rpi4-sandbox
