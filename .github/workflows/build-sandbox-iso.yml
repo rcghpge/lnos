@@ -9,7 +9,7 @@ on:
     paths:
       - 'archiso/**'
       - 'scripts/**'
-      - '.github/workflows/build-iso.yml'
+      - '.github/workflows/build-sandbox-iso.yml' 
       - '*.sh'
   workflow_dispatch:
     inputs:
@@ -50,16 +50,19 @@ jobs:
 
       - name: x86_64 ISO builds in Docker
         run: |
-          docker run --rm \
+          docker run --rm --privileged \
             --cap-add=ALL \
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
             -e HOST_UID=$(id -u) \
             -e HOST_GID=$(id -g) \
             archlinux:latest \
-            bash -c '
+            bash -euxo pipefail -c '
               pacman -Syu --noconfirm
-              pacman -S --noconfirm base-devel git archiso grub gnupg sudo
+              pacman -S --noconfirm archlinux-keyring gnupg
+              pacman-key --init
+              pacman-key --populate archlinux
+              pacman -S --noconfirm base-devel git archiso grub sudo
               groupadd -g $HOST_GID builder || true
               useradd -u $HOST_UID -g $HOST_GID -m builder || true
               echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d/builder
@@ -73,9 +76,14 @@ jobs:
 
       - name: Check Sandbox ISOs; generate checksums
         run: |
+          set -euo pipefail
           mkdir -p out
-          ISO=$(ls out/*.iso | head -n1)
-          test -n "$ISO"
+          ISO=$(ls out/*.iso 2>/dev/null | head -n1 || true)
+          if [[ -z "${ISO:-}" ]]; then
+            echo "❌ No ISO found under ./out after build."
+            find out -maxdepth 2 -type f -ls || true
+            exit 1
+          fi
           NEWNAME="lnos-${{ steps.version.outputs.VERSION }}-x86_64-sandbox.iso"
           mv "$ISO" "out/$NEWNAME"
           sha256sum "out/$NEWNAME" | tee out/SHA256SUMS
@@ -88,9 +96,11 @@ jobs:
         run: |
           mkdir -p "$GNUPGHOME"
           chmod 700 "$GNUPGHOME"
-          # Uncomment if secret is base64:
-          # echo "$GPG_KEY" | base64 --decode | gpg --batch --import -
-          echo "$GPG_KEY" | gpg --batch --import
+          if echo "$GPG_KEY" | head -1 | grep -q "BEGIN PGP PRIVATE KEY BLOCK"; then
+            echo "$GPG_KEY" | gpg --batch --import
+          else
+            echo "$GPG_KEY" | base64 --decode | gpg --batch --import -
+          fi
           gpg --batch --yes --pinentry-mode loopback \
             --passphrase "$PASSPHRASE" \
             --armor --detach-sign \
@@ -136,14 +146,17 @@ jobs:
 
       - name: AArch64 Image Builds in Docker
         run: |
-          docker run --rm \
+          docker run --rm --privileged \
             --cap-add=ALL \
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
             archlinux:latest \
-            bash -c '
+            bash -euxo pipefail -c '
               pacman -Syu --noconfirm
-              pacman -S --noconfirm git wget parted dosfstools e2fsprogs multipath-tools
+              pacman -S --noconfirm archlinux-keyring gnupg
+              pacman-key --init
+              pacman-key --populate archlinux
+              pacman -S --noconfirm git wget parted dosfstools e2fsprogs
               chmod +x build-arm-image.sh build-arm-minimal.sh
               ./build-arm-minimal.sh rpi4
               ./build-arm-image.sh rpi4
@@ -156,7 +169,7 @@ jobs:
           path: |
             out/*.img
             out/*.img.xz
-          if-no-files-found: warn
+          if-no-files-found: error
           compression-level: 0
           retention-days: 30
 
@@ -199,3 +212,4 @@ jobs:
             ./release-assets/**/*.img.xz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
