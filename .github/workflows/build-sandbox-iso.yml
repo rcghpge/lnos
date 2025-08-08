@@ -145,28 +145,59 @@ jobs:
           platforms: arm64
 
       - name: AArch64 Image Builds in Docker
-        run: |
-          docker run --rm --privileged \
-          -v ${{ github.workspace }}:/workspace \
-          -w /workspace \
-          archlinux:latest \
-          bash -euxo pipefail -c '
-            pacman -Syu --noconfirm
-            pacman -S --noconfirm archlinux-keyring gnupg
-            pacman-key --init
-            pacman-key --populate archlinux
-            pacman -S --noconfirm git wget parted dosfstools e2fsprogs util-linux multipath-tools
-            modprobe loop || true
-            modprobe dm_mod || true
+  run: |
+    docker run --rm --privileged \
+      --cap-add=ALL \
+      -v ${{ github.workspace }}:/workspace \
+      -w /workspace \
+      archlinux:latest \
+      bash -euxo pipefail -c '
+        pacman -Syu --noconfirm
+        pacman -S --noconfirm archlinux-keyring gnupg
+        pacman-key --init
+        pacman-key --populate archlinux
+        pacman -S --noconfirm git wget parted dosfstools e2fsprogs
+        chmod +x build-arm-image.sh build-arm-minimal.sh
 
-            for i in $(seq 0 7); do
-              [ -e /dev/loop$i ] || mknod -m 660 /dev/loop$i b 7 $i || true
-            done
+        # --- inline extractor ---
+        extract_kernel_bundle() {
+          local TAR="$1" DEST="$2"
+          mkdir -p "$DEST"
+          echo "🔎 Listing first 100 entries of: $TAR"
+          tar -tzf "$TAR" | sed -n "1,100p" || true
 
-            chmod +x build-arm-image.sh build-arm-minimal.sh
-            ./build-arm-minimal.sh rpi4
-            ./build-arm-image.sh rpi4
-          '
+          local CONTENTS
+          CONTENTS="$(tar -tzf "$TAR")"
+
+          for p in boot usr/lib/modules lib/modules usr/lib/firmware lib/firmware; do
+            if grep -q "^${p}/" <<<"$CONTENTS"; then
+              echo "→ extracting $p"
+              tar --warning=no-unknown-keyword -xzf "$TAR" -C "$DEST" \
+                "$p" --no-same-owner --no-same-permissions
+            else
+              echo "→ skip $p (not in archive)"
+            fi
+          done
+        }
+
+        # Minimal rootfs (LnOS base system)
+        ./build-arm-minimal.sh rpi4 || true
+
+        # If a linux-rpi tarball exists, extract it instead of assuming paths
+        # Adjust the glob if file name differs.
+        TAR_BUNDLE="$(ls /tmp/linux*rpi*.tar.gz 2>/dev/null | head -n1 || true)"
+        if [[ -n "$TAR_BUNDLE" ]]; then
+          echo "📦 Found kernel/firmware bundle: $TAR_BUNDLE"
+          DEST="/workspace/out/rootfs"
+          mkdir -p "$DEST"
+          extract_kernel_bundle "$TAR_BUNDLE" "$DEST"
+        else
+          echo "ℹ️ No linux-rpi tarball found at /tmp; skipping manual extraction."
+        fi
+
+        # Build images 
+        ./build-arm-image.sh rpi4
+      '
 
       - name: Upload aarch64 images
         uses: actions/upload-artifact@v4
