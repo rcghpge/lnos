@@ -1,50 +1,52 @@
-name: Build LnOS ISO
+name: Build LnOS Sandbox ISO
+# These sandbox ISOs build at sandbox branch only. It is for LnOS base system development
+# Test/debugging of LnOS base system for x86_64 architectures. WIP
 
 on:
   push:
-    branches: [ main, ISO_Updates ]
-    paths:
-      - 'archiso/**'
-      - 'scripts/**'
-      - '.github/workflows/build-iso.yml'
-      - 'build-iso.sh'
-      - 'build-arm-image.sh'
-  pull_request:
-    branches: [ main, ISO ]
-    paths:
-      - 'archiso/**'
-      - 'scripts/**'
-      - '.github/workflows/build-iso.yml'
-      - 'build-iso.sh'
-      - 'build-arm-image.sh'
+    branches: [sandbox]
+    tags:
+      - 'sandbox-*'
   workflow_dispatch:
     inputs:
       architecture:
         description: 'Target architecture'
         required: true
-        default: 'both'
+        default: 'x86_64'
         type: choice
         options:
           - 'x86_64'
           - 'aarch64'
           - 'both'
 
-# add write permissions
 permissions:
   contents: write
 
 jobs:
   build-x86_64:
-    if: ${{ github.event.inputs.architecture == 'x86_64' || github.event.inputs.architecture == 'both' || github.event.inputs.architecture == '' }}
+    if: github.event.inputs.architecture == 'x86_64' ||
+        github.event.inputs.architecture == 'both' ||
+        github.event.inputs.architecture == '' ||
+        startsWith(github.ref, 'refs/tags/sandbox-')
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build x86_64 ISO in privileged container
+      - name: Extract version from tag
+        id: version
         run: |
-          # Use Docker with full privileges and system mounts
+          VERSION="dev"
+          if [[ "${GITHUB_REF}" == refs/tags/sandbox-* ]]; then
+            VERSION=$(basename "${GITHUB_REF}" | sed 's/sandbox-test-//')
+          else
+            VERSION=$(date +%Y.%m.%d)
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Build x86_64 ISO in Docker
+        run: |
           docker run --rm --privileged \
             --cap-add=ALL \
             --security-opt=apparmor:unconfined \
@@ -56,29 +58,54 @@ jobs:
             -w /workspace \
             archlinux:latest \
             bash -c "
-              # Install required packages
               pacman -Syu --noconfirm
-              pacman -S --noconfirm base-devel git archiso grub
-              
-              # Make scripts executable
+              pacman -S --noconfirm base-devel git archiso grub gnupg
               chmod +x build-iso.sh
-              chmod +x archiso/airootfs/root/customize_airootfs.sh
-              
-              # Build the ISO
+              chmod +x archiso/airootfs/root/customize_airootfs.sh || true
               ./build-iso.sh x86_64
             "
 
-      - name: Upload x86_64 ISO artifact
+      - name: Rename ISO to sandbox format
+        run: |
+          mkdir -p out
+          ISO=$(ls out/*.iso | head -n1)
+          NEWNAME="lnos-${{ steps.version.outputs.VERSION }}-x86_64-sandbox.iso"
+          mv "$ISO" "out/$NEWNAME"
+          echo "✅ Renamed ISO to: $NEWNAME"
+
+      - name: GPG sign ISO
+        run: |
+          gpg --batch --yes --pinentry-mode loopback \
+            --output out/lnos-${{ steps.version.outputs.VERSION }}-x86_64-sandbox.iso.asc \
+            --armor --detach-sign out/lnos-${{ steps.version.outputs.VERSION }}-x86_64-sandbox.iso
+        env:
+          GNUPGHOME: /github/home/.gnupg
+          GPG_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: Upload ISO artifact
         uses: actions/upload-artifact@v4
         with:
-          name: lnos-x86_64-iso
-          path: out/*.iso
+          name: lnos-${{ steps.version.outputs.VERSION }}-x86_64-sandbox
+          path: out/*
           retention-days: 30
 
+      - name: Create Git tag for ISO (optional)
+        if: github.ref == 'refs/heads/sandbox'
+        run: |
+          TAG_NAME="sandbox-${{ steps.version.outputs.VERSION }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "$TAG_NAME"
+          git push origin "$TAG_NAME"
+
   build-aarch64:
-    if: ${{ github.event.inputs.architecture == 'aarch64' || github.event.inputs.architecture == 'both' || github.event.inputs.architecture == '' }}
+    if: github.event.inputs.architecture == 'aarch64' ||
+        github.event.inputs.architecture == 'both' ||
+        github.event.inputs.architecture == '' ||
+        startsWith(github.ref, 'refs/tags/sandbox-')
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -91,9 +118,8 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build aarch64 SD card images
+      - name: Build aarch64 images in Docker
         run: |
-          # Build both full and minimal ARM64 SD card images
           docker run --rm --privileged \
             --cap-add=ALL \
             --security-opt=apparmor:unconfined \
@@ -101,238 +127,19 @@ jobs:
             -w /workspace \
             archlinux:latest \
             bash -c '
-              # Monitor disk space
-              echo "=== DISK SPACE BEFORE INSTALL ==="
-              df -h
-              
-              # Install minimal required tools (avoid base-devel to save space)
               pacman -Syu --noconfirm
               pacman -S --noconfirm git wget parted dosfstools e2fsprogs multipath-tools
-              
-              echo "=== DISK SPACE AFTER PACKAGE INSTALL ==="
-              df -h
-              
-              # Clean up package cache to save space
               pacman -Sc --noconfirm
-              
-              # Additional cleanup to free more space
-              rm -rf /var/cache/pacman/pkg/*
-              rm -rf /tmp/*
-              
-              echo "=== DISK SPACE AFTER CLEANUP ==="
-              df -h
-              
+              rm -rf /var/cache/pacman/pkg/* /tmp/*
               chmod +x build-arm-image.sh build-arm-minimal.sh
-              
-              # Check disk space before building images
-              echo "=== DISK SPACE BEFORE IMAGE BUILD ==="
-              df -h
-              
-              # Build minimal ARM64 SD card image first (smaller, faster)
-              echo "=== BUILDING MINIMAL ARM IMAGE ==="
               ./build-arm-minimal.sh rpi4
-              
-              echo "=== DISK SPACE AFTER MINIMAL BUILD ==="
-              df -h
-              
-              # Build full ARM64 SD card image
-              echo "=== BUILDING FULL ARM IMAGE ==="
               ./build-arm-image.sh rpi4
-              
-              echo "=== DISK SPACE AFTER FULL BUILD ==="
-              df -h
             '
 
-      - name: Upload aarch64 SD card images
+      - name: Upload aarch64 images
         uses: actions/upload-artifact@v4
         with:
-          name: lnos-aarch64-sdcard
+          name: lnos-aarch64-rpi4-sandbox
           path: out/*.img
           retention-days: 30
 
-  create-release:
-    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/ISO') && github.event_name == 'push'
-    needs: [build-x86_64, build-aarch64]
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download x86_64 ISO
-        uses: actions/download-artifact@v4
-        with:
-          name: lnos-x86_64-iso
-          path: ./isos/
-
-      - name: Download aarch64 SD card image
-        uses: actions/download-artifact@v4
-        with:
-          name: lnos-aarch64-sdcard
-          path: ./isos/
-
-      - name: Check file sizes for compression decision
-        run: |
-          cd ./isos/
-          
-          echo "=== CHECKING FILE SIZES ==="
-          
-          # Check ISO files
-          for iso in *.iso; do
-            if [ -f "$iso" ]; then
-              size_mb=$(du -m "$iso" | cut -f1)
-              size_human=$(du -h "$iso" | cut -f1)
-              echo "ISO: $(basename "$iso")"
-              echo "Size: ${size_human} (${size_mb} MB)"
-              
-              if [[ $size_mb -lt 1000 ]]; then
-                echo "✅ Under 1GB - no compression needed!"
-                echo "Keeping $iso uncompressed"
-              else
-                echo "❌ Over 1GB - compressing with XZ"
-                echo "Compressing $iso..."
-                xz -9 -T 0 "$iso"
-                echo "Compressed $(basename "$iso").xz"
-              fi
-              echo ""
-            fi
-          done
-          
-          # Check IMG files  
-          for img in *.img; do
-            if [ -f "$img" ]; then
-              size_mb=$(du -m "$img" | cut -f1)
-              size_human=$(du -h "$img" | cut -f1)
-              echo "IMG: $(basename "$img")"
-              echo "Size: ${size_human} (${size_mb} MB)"
-              
-              if [[ $size_mb -lt 1000 ]]; then
-                echo "✅ Under 1GB - no compression needed!"
-                echo "Keeping $img uncompressed"
-              else
-                echo "❌ Over 1GB - compressing with XZ"
-                echo "Compressing $img..."
-                xz -9 -T 0 "$img"
-                echo "Compressed $(basename "$img").xz"
-              fi
-              echo ""
-            fi
-          done
-          
-          echo "=== FINAL FILES ==="
-          ls -lh
-
-      - name: Sign release files with GPG
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/ISO'
-        env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        run: |
-          cd ./isos/
-          
-          echo "🔐 Signing release files with GPG..."
-          
-          # Import the private key
-          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
-          
-          # Get key ID for verification
-          KEY_ID=$(gpg --list-secret-keys --with-colons | awk -F: '/^sec:/ {print $5}' | head -1)
-          echo "📋 Using GPG key: $KEY_ID"
-          
-          # Sign all release files
-          for file in *.iso *.img *.xz; do
-            if [ -f "$file" ]; then
-              echo "🔏 Signing: $file"
-              
-              # Create detached ASCII-armored signature
-              gpg --batch --yes \
-                  --pinentry-mode loopback \
-                  --passphrase "$GPG_PASSPHRASE" \
-                  --local-user "$KEY_ID" \
-                  --detach-sign \
-                  --armor \
-                  --output "${file}.asc" \
-                  "$file"
-              
-              if [ -f "${file}.asc" ]; then
-                echo "✅ Successfully signed: $file -> ${file}.asc"
-                echo "📝 Signature size: $(wc -c < "${file}.asc") bytes"
-              else
-                echo "❌ Failed to sign: $file"
-              fi
-            fi
-          done
-          
-          echo ""
-          echo "=== SIGNED FILES ==="
-          ls -lh *.asc 2>/dev/null || echo "No signature files found"
-          
-          echo ""
-          echo "=== GPG KEY INFO ==="
-          gpg --list-keys "$KEY_ID" || echo "Key info not available"
-
-      - name: Generate release tag
-        id: tag
-        run: |
-          TAG="v$(date +'%Y.%m.%d')-$(git rev-parse --short HEAD)"
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ steps.tag.outputs.tag }}
-          name: LnOS Release ${{ steps.tag.outputs.tag }}
-          body: |
-            ## LnOS Custom Arch Linux Distribution
-            
-            ![GPG Signed](https://img.shields.io/badge/GPG-Signed-brightgreen?style=for-the-badge&logo=gnupg)
-            ![Security Verified](https://img.shields.io/badge/Security-Verified-blue?style=for-the-badge&logo=shield)
-            ![Integrity Guaranteed](https://img.shields.io/badge/Integrity-Guaranteed-orange?style=for-the-badge&logo=checkmarx)
-            
-            **🔒 This release is cryptographically signed for authenticity and integrity**
-            
-            This release contains custom minimal Arch Linux images with the LnOS installer.
-            
-            ### Features:
-            - **Cryptographically signed** with GPG (Key: `9486759312876AD7`)
-            - Minimal Arch Linux base system
-            - Interactive package selection
-            - Desktop environment choices (GNOME, KDE, Hyprland, DWM, TTY)
-            - CSE and Custom installation profiles
-            - Automated partitioning and installation
-            
-            ### Files Included:
-            - **x86_64 ISO/IMG**: For VMs, Intel/AMD computers, and USB boot
-            - **ARM64 IMG**: SD card image for Raspberry Pi 4 and ARM64 devices
-            - **Digital Signatures**: `.asc` files for verifying authenticity
-            
-            **Note**: Large files (>1GB) are compressed with XZ to stay under GitHub's 2GB limit. Files under 1GB are uncompressed and ready to use.
-            
-            ### 🛡️ Security & Digital Signature Verification:
-            
-            > ⚠️ **IMPORTANT**: Always verify file signatures before use! All release files are digitally signed with GPG.
-            
-            **GPG Key Information:**
-            - **Key ID**: `9486759312876AD7`
-            - **Fingerprint**: `FF3B 2203 9FA1 CBC0 72E5 8967 9486 7593 1287 6AD7`
-            - **Owner**: LnOS Development Team
-            
-            **Verification Methods:**
-            ```bash
-            # Quick verification (auto-imports key)
-            curl -fsSL https://raw.githubusercontent.com/uta-lug-nuts/LnOS/main/scripts/verify-signature.sh | bash -s -- <filename>
-            
-            # Manual verification
-            curl -fsSL https://raw.githubusercontent.com/uta-lug-nuts/LnOS/main/keys/lnos-public-key.asc | gpg --import
-            gpg --verify <filename>.asc <filename>
-            ```
-            
-            ### Checksums:
-            ```
-            $(cd isos && sha256sum * 2>/dev/null || echo "Checksums will be calculated...")
-            ```
-          files: ./isos/*
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
