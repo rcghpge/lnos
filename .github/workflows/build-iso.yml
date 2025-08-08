@@ -96,6 +96,10 @@ jobs:
 
       - name: GPG signatures for Sandbox ISOs
         run: |
+          mkdir -p "$GNUPGHOME"
+
+          echo "$GPG_KEY" | gpg --batch --import
+
           gpg --batch --yes --pinentry-mode loopback \
             --output out/lnos-${{ steps.version.outputs.VERSION }}-x86_64-sandbox.iso.asc \
             --armor --detach-sign out/lnos-${{ steps.version.outputs.VERSION }}-x86_64-sandbox.iso
