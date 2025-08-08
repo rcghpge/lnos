@@ -52,24 +52,34 @@ jobs:
       - name: x86_64 ISO Builds in Docker (with UID/GID checks)
         run: |
           docker run --rm --privileged \
-            --cap-add=ALL \
-            --security-opt=apparmor:unconfined \
-            --security-opt=seccomp=unconfined \
-            -v /sys/fs/cgroup:/sys/fs/cgroup:rw \
-            -v /dev:/dev \
-            -v /proc:/proc \
-            -v ${{ github.workspace }}:/workspace \
-            -w /workspace \
-            -e HOST_UID=$(id -u) \
-            -e HOST_GID=$(id -g) \
-            archlinux:latest \
-            bash -c '
-              pacman -Syu --noconfirm
-              pacman -S --noconfirm base-devel git archiso grub gnupg sudo
-              groupadd -g $HOST_GID builder || true
-              useradd -u $HOST_UID -g $HOST_GID -m builder || true
-              chown -R $HOST_UID:$HOST_GID /workspace
-              sudo -u builder bash -c "
+          --cap-add=ALL \
+          --security-opt=apparmor:unconfined \
+          --security-opt=seccomp=unconfined \
+          -v /sys/fs/cgroup:/sys/fs/cgroup:rw \
+          -v /dev:/dev \
+          -v /proc:/proc \
+          -v ${{ github.workspace }}:/workspace \
+          -w /workspace \
+          -e HOST_UID=$(id -u) \
+          -e HOST_GID=$(id -g) \
+          archlinux:latest \
+          bash -c '
+            pacman -Syu --noconfirm
+            pacman -S --noconfirm base-devel git archiso grub gnupg sudo
+
+            # Create group and user matching GitHub runner UID/GID
+            groupadd -g $HOST_GID builder || true
+            useradd -u $HOST_UID -g $HOST_GID -m builder || true
+
+            # Add passwordless sudo for builder
+            echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d/builder
+            chmod 0440 /etc/sudoers.d/builder
+
+            # Give workspace permissions to the builder
+            chown -R $HOST_UID:$HOST_GID /workspace
+
+            # Run ISO build as builder user
+            sudo -u builder bash -c "
                 chmod +x build-iso.sh
                 chmod +x archiso/airootfs/root/customize_airootfs.sh || true
                 ./build-iso.sh x86_64
