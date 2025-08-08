@@ -1,3 +1,5 @@
 # Merge branch dev
 .github/workflows/ci-main.yml merge=ours
+.github/workflows/ci-sandbox.yml merge=ours
+.github/workflows/ci-merge.yml merge=ours
 
