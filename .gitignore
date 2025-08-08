@@ -75,7 +75,6 @@ coverage/
 *private*.asc
 *secret*.asc
 private-keys/
-
 # Allow public keys in keys/ directory
 !keys/*public*.asc
 !keys/lnos-public-key.asc
@@ -83,4 +82,4 @@ private-keys/
 # Custom ISOs with different names
 lnos-*.iso
 archlinux-*.iso
-custom-*.iso 
+custom-*.iso docs/arm-image-expansion.md
