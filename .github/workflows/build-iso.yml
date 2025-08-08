@@ -101,10 +101,11 @@ jobs:
           echo "$GPG_KEY" | gpg --batch --import
 
           gpg --batch --yes --pinentry-mode loopback \
+            --passphrase "$PASSPHRASE" \
             --output out/lnos-${{ steps.version.outputs.VERSION }}-x86_64-sandbox.iso.asc \
             --armor --detach-sign out/lnos-${{ steps.version.outputs.VERSION }}-x86_64-sandbox.iso
         env:
-          GNUPGHOME: /github/home/.gnupg
+          GNUPGHOME: ${{ runner.temp }}/.gnupg
           GPG_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
