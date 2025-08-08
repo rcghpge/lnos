@@ -4,8 +4,9 @@ on:
   push:
     branches: [main]
   schedule:
-    # Runs every Friday at 4:00 PM CST (22:00 UTC)
-    - cron: '0 22 * * 5' 
+    # Runs at midnight 00:00 UTC every Friday
+    # Thursday 6:00 PM CST/7:00 PM CDT
+    - cron: '0 0 * * 5' 
   workflow_dispatch:
 
 permissions:
