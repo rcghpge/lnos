@@ -1,10 +1,10 @@
 name: Build LnOS Sandbox ISO
-# Sandbox ISO builder for development/testing. Triggered on sandbox push, tag, or manual dispatch.
+# Sandbox ISOs and Images builder for development/testing.
 
 on:
   push:
     branches: [sandbox]
-    tags: 
+    tags:
       - 'sandbox-*'
     paths:
       - 'archiso/**'
@@ -38,85 +38,78 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Extract version from tag
+      - name: Check versions from tag
         id: version
         run: |
-          VERSION="dev"
           if [[ "${GITHUB_REF}" == refs/tags/sandbox-* ]]; then
-            VERSION=$(basename "${GITHUB_REF}" | sed 's/sandbox-test-//')
+            VERSION=$(basename "${GITHUB_REF}" | sed 's/^sandbox-//')
           else
             VERSION=$(date +%Y.%m.%d)
           fi
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: x86_64 ISO Builds in Docker (with UID/GID checks)
+      - name: x86_64 ISO builds in Docker
         run: |
-          docker run --rm --privileged \
-          --cap-add=ALL \
-          --security-opt=apparmor:unconfined \
-          --security-opt=seccomp=unconfined \
-          -v /sys/fs/cgroup:/sys/fs/cgroup:rw \
-          -v /dev:/dev \
-          -v /proc:/proc \
-          -v ${{ github.workspace }}:/workspace \
-          -w /workspace \
-          -e HOST_UID=$(id -u) \
-          -e HOST_GID=$(id -g) \
-          archlinux:latest \
-          bash -c '
-            pacman -Syu --noconfirm
-            pacman -S --noconfirm base-devel git archiso grub gnupg sudo
-
-            # Create group and user matching GitHub runner UID/GID
-            groupadd -g $HOST_GID builder || true
-            useradd -u $HOST_UID -g $HOST_GID -m builder || true
-
-            # Add passwordless sudo for builder
-            echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d/builder
-            chmod 0440 /etc/sudoers.d/builder
-
-            # Give workspace permissions to the builder
-            chown -R $HOST_UID:$HOST_GID /workspace
-
-            # Run ISO build as builder user
-            sudo -u builder bash -c "
+          docker run --rm \
+            --cap-add=ALL \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            -e HOST_UID=$(id -u) \
+            -e HOST_GID=$(id -g) \
+            archlinux:latest \
+            bash -c '
+              pacman -Syu --noconfirm
+              pacman -S --noconfirm base-devel git archiso grub gnupg sudo
+              groupadd -g $HOST_GID builder || true
+              useradd -u $HOST_UID -g $HOST_GID -m builder || true
+              echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d/builder
+              chown -R $HOST_UID:$HOST_GID /workspace
+              sudo -u builder bash -c "
                 chmod +x build-iso.sh
                 chmod +x archiso/airootfs/root/customize_airootfs.sh || true
                 ./build-iso.sh x86_64
               "
             '
 
-      - name: Set ISO Tags for Sandbox ISOs
+      - name: Check Sandbox ISOs; generate checksums
         run: |
           mkdir -p out
           ISO=$(ls out/*.iso | head -n1)
+          test -n "$ISO"
           NEWNAME="lnos-${{ steps.version.outputs.VERSION }}-x86_64-sandbox.iso"
           mv "$ISO" "out/$NEWNAME"
-          echo "✅ Renamed ISO to: $NEWNAME"
+          sha256sum "out/$NEWNAME" | tee out/SHA256SUMS
 
-      - name: GPG signatures for Sandbox ISOs
-        run: |
-          mkdir -p "$GNUPGHOME"
-
-          echo "$GPG_KEY" | gpg --batch --import
-
-          gpg --batch --yes --pinentry-mode loopback \
-            --passphrase "$PASSPHRASE" \
-            --output out/lnos-${{ steps.version.outputs.VERSION }}-x86_64-sandbox.iso.asc \
-            --armor --detach-sign out/lnos-${{ steps.version.outputs.VERSION }}-x86_64-sandbox.iso
+      - name: Import GPG key - sign Sandbox ISOs
         env:
           GNUPGHOME: ${{ runner.temp }}/.gnupg
           GPG_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          mkdir -p "$GNUPGHOME"
+          chmod 700 "$GNUPGHOME"
+          # Uncomment if secret is base64:
+          # echo "$GPG_KEY" | base64 --decode | gpg --batch --import -
+          echo "$GPG_KEY" | gpg --batch --import
+          gpg --batch --yes --pinentry-mode loopback \
+            --passphrase "$PASSPHRASE" \
+            --armor --detach-sign \
+            --output out/lnos-${{ steps.version.outputs.VERSION }}-x86_64-sandbox.iso.asc \
+            out/lnos-${{ steps.version.outputs.VERSION }}-x86_64-sandbox.iso
 
-      - name: Generate ISO artifacts
+      - name: Generates ISO, signature, and checksums
         uses: actions/upload-artifact@v4
         with:
           name: lnos-${{ steps.version.outputs.VERSION }}-x86_64-sandbox
-          path: out/*
+          path: |
+            out/lnos-${{ steps.version.outputs.VERSION }}-x86_64-sandbox.iso
+            out/lnos-${{ steps.version.outputs.VERSION }}-x86_64-sandbox.iso.asc
+            out/SHA256SUMS
+          if-no-files-found: error
+          compression-level: 0
           retention-days: 30
 
-      - name: Generate Git Tags
+      - name: Generate Sandbox Tags
         if: github.ref == 'refs/heads/sandbox'
         run: |
           TAG_NAME="sandbox-${{ steps.version.outputs.VERSION }}"
@@ -141,50 +134,48 @@ jobs:
         with:
           platforms: arm64
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: AArch64 build images in Docker
+      - name: AArch64 Image Builds in Docker
         run: |
-          docker run --rm --privileged \
+          docker run --rm \
             --cap-add=ALL \
-            --security-opt=apparmor:unconfined \
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
             archlinux:latest \
             bash -c '
               pacman -Syu --noconfirm
               pacman -S --noconfirm git wget parted dosfstools e2fsprogs multipath-tools
-              pacman -Sc --noconfirm
-              rm -rf /var/cache/pacman/pkg/* /tmp/*
               chmod +x build-arm-image.sh build-arm-minimal.sh
               ./build-arm-minimal.sh rpi4
               ./build-arm-image.sh rpi4
             '
 
-      - name: Generate aarch64 images
+      - name: Upload aarch64 images
         uses: actions/upload-artifact@v4
         with:
           name: lnos-aarch64-rpi4-sandbox
-          path: out/*.img
+          path: |
+            out/*.img
+            out/*.img.xz
+          if-no-files-found: warn
+          compression-level: 0
           retention-days: 30
 
   create-release:
     if: startsWith(github.ref, 'refs/tags/sandbox-')
     needs: [build-x86_64, build-aarch64]
-    runs-on: archlinux
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download all build artifacts
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: ./release-assets/
 
-      - name: Final artifact listing (pre-release)
-        run: ls -lh ./release-assets/** || echo "No files found"
+      - name: Final artifact listing
+        run: find ./release-assets -type f -ls || true
 
       - name: Create GitHub Release with Sandbox Assets
         uses: softprops/action-gh-release@v1
@@ -197,9 +188,14 @@ jobs:
 
             Artifacts:
             - GPG signed `.iso` and `.img` files
-            - Raw and compressed files (if applicable)
+            - SHA256SUMS
 
             ⚠️ Not production ready. Use only for development/QA.
-          files: ./release-assets/**/*.{iso,img,asc,xz}
+          files: |
+            ./release-assets/**/*.iso
+            ./release-assets/**/*.iso.asc
+            ./release-assets/**/SHA256SUMS
+            ./release-assets/**/*.img
+            ./release-assets/**/*.img.xz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
