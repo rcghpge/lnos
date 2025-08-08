@@ -1,5 +1,7 @@
 # lnos
 
+[![Sandbox](https://github.com/rcghpge/lnos/actions/workflows/ci-sandbox.yml/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/ci-sandbox.yml)
+[![ShellCheck](https://github.com/rcghpge/lnos/actions/workflows/lint.yml/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/lint.yml)
 [![CodeQL](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql)
 [![LnOS CI/CD](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml)
 
@@ -19,7 +21,7 @@
 
 ### Overview
 > ℹ️ Note:
-> This is a sandbox club build of Ln OS source tree. It's an early-stage build for building and testing new features and workflows.
+> This is a sandbox branch build of Ln OS source tree. It's an early-stage build for building and testing new features and workflows.
 > For source tree check out the latest build here: [Ln OS](https://github.com/uta-lug-nuts/LnOS.git)
 
 The LN Project is a Linux distribution based on Arch Linux, originally designed for University of Texas at Arlington (UTA) students. It aims to provide a lightweight, flexible, and powerful environment tailored to the needs of engineering students. The distro supports both x86_64 and ARM architectures (e.g., Raspberry Pi), ensuring compatibility with a wide range of student hardware.
