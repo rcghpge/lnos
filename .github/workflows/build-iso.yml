@@ -4,13 +4,13 @@ name: Build LnOS Sandbox ISO
 on:
   push:
     branches: [sandbox]
+    tags: 
+      - 'sandbox-*'
     paths:
       - 'archiso/**'
       - 'scripts/**'
       - '.github/workflows/build-iso.yml'
       - '*.sh'
-  tags:
-    - 'sandbox-*'
   workflow_dispatch:
     inputs:
       architecture:
