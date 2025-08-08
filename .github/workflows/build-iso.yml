@@ -169,3 +169,37 @@ jobs:
           path: out/*.img
           retention-days: 30
 
+  create-release:
+    if: startsWith(github.ref, 'refs/tags/sandbox-')
+    needs: [build-x86_64, build-aarch64]
+    runs-on: archlinux
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./release-assets/
+
+      - name: Final artifact listing (pre-release)
+        run: ls -lh ./release-assets/** || echo "No files found"
+
+      - name: Create GitHub Release with Sandbox Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: LnOS Sandbox Release ${{ github.ref_name }}
+          body: |
+            🚧 **Sandbox Build** for testing & preview
+            This release contains ISO/IMGs from the sandbox branch.
+
+            Artifacts:
+            - GPG signed `.iso` and `.img` files
+            - Raw and compressed files (if applicable)
+
+            ⚠️ Not production ready. Use only for development/QA.
+          files: ./release-assets/**/*.{iso,img,asc,xz}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
