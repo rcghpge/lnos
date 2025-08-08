@@ -68,8 +68,11 @@ jobs:
               pacman-key --populate archlinux
               pacman -S --noconfirm base-devel git archiso grub sudo
               groupadd -g $HOST_GID builder || true
-              useradd -u $HOST_UID -g $HOST_GID -m builder || true
-              echo "builder ALL=(ALL) NOPASSW D: ALL" >> /etc/sudoers.d/builder
+              useradd  -u $HOST_UID -g $HOST_GID -m builder || true
+
+              printf "builder ALL=(ALL) NOPASSWD: ALL\n" > /etc/sudoers.d/builder
+              chmod 0440 /etc/sudoers.d/builder
+              visudo -cf /etc/sudoers
               chown -R $HOST_UID:$HOST_GID /workspace
               sudo -u builder bash -c "
                 chmod +x build-iso.sh
@@ -149,12 +152,14 @@ jobs:
         with:
           platforms: arm64
 
-      - name: Build aarch64 SD card images in Docker 
+      - name: Build aarch64 SD card images in Docker
         run: |
           docker run --rm --privileged \
             --cap-add=ALL \
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
+            -e HOST_UID=$(id -u) \
+            -e HOST_GID=$(id -g) \
             archlinux:latest \
             bash -euxo pipefail -c '
               pacman -Syu --noconfirm
@@ -164,42 +169,28 @@ jobs:
               pacman -S --noconfirm git wget parted dosfstools e2fsprogs
               chmod +x build-arm-image.sh build-arm-minimal.sh
 
-              # --- inline extractor: handles boot/ + usr/lib/* layouts ---
-              extract_kernel_bundle() {
-                local TAR="$1" DEST="$2"
-                mkdir -p "$DEST"
-                local CONTENTS
-                echo "🔎 Listing first 100 entries of: $TAR" || true
-                tar -tzf "$TAR" | sed -n "1,100p" || true
-                CONTENTS="$(tar -tzf "$TAR")"
+              # inline extractor
+              extract_kernel_bundle() { 
+                local TAR="$1" DEST="$2"; mkdir -p "$DEST"
+                local CONTENTS; CONTENTS="$(tar -tzf "$TAR")"
                 for p in boot usr/lib/modules lib/modules usr/lib/firmware lib/firmware; do
                   if grep -q "^${p}/" <<<"$CONTENTS"; then
-                    echo "→ extracting $p"
-                    tar --warning=no-unknown-keyword -xzf "$TAR" -C "$DEST" \
-                      "$p" --no-same-owner --no-same-permissions
-                  else
-                    echo "→ skip $p (not in archive)"
+                    tar --warning=no-unknown-keyword -xzf "$TAR" -C "$DEST" "$p" \
+                      --no-same-owner --no-same-permissions
                   fi
                 done
-              }
-              # ----------------------------------------------------------------
+              } 
 
-              echo "=== BUILDING MINIMAL ARM IMAGE ==="
               ./build-arm-minimal.sh rpi4 || true
-
-              # If minimal script downloaded linux*rpi*.tar.gz, extract it robustly
               TAR_BUNDLE="$(ls /tmp/linux*rpi*.tar.gz 2>/dev/null | head -n1 || true)"
               if [[ -n "$TAR_BUNDLE" ]]; then
-                echo "📦 Found kernel/firmware bundle: $TAR_BUNDLE"
-                DEST="/workspace/out/rootfs"
-                mkdir -p "$DEST"
+                DEST="/workspace/out/rootfs"; mkdir -p "$DEST"
                 extract_kernel_bundle "$TAR_BUNDLE" "$DEST"
-              else
-                echo "ℹ️ No linux-rpi tarball found at /tmp; skipping manual extraction."
               fi
-
-              echo "=== BUILDING FULL ARM IMAGE ==="
               ./build-arm-image.sh rpi4
+
+              # 👇 UID/GID checks write/sign artifacts
+              chown -R $HOST_UID:$HOST_GID /workspace/out || true
             '
 
       - name: Import GPG key & sign ARM images
