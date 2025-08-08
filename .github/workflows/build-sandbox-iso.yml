@@ -147,20 +147,26 @@ jobs:
       - name: AArch64 Image Builds in Docker
         run: |
           docker run --rm --privileged \
-            --cap-add=ALL \
-            -v ${{ github.workspace }}:/workspace \
-            -w /workspace \
-            archlinux:latest \
-            bash -euxo pipefail -c '
-              pacman -Syu --noconfirm
-              pacman -S --noconfirm archlinux-keyring gnupg
-              pacman-key --init
-              pacman-key --populate archlinux
-              pacman -S --noconfirm git wget parted dosfstools e2fsprogs
-              chmod +x build-arm-image.sh build-arm-minimal.sh
-              ./build-arm-minimal.sh rpi4
-              ./build-arm-image.sh rpi4
-            '
+          -v ${{ github.workspace }}:/workspace \
+          -w /workspace \
+          archlinux:latest \
+          bash -euxo pipefail -c '
+            pacman -Syu --noconfirm
+            pacman -S --noconfirm archlinux-keyring gnupg
+            pacman-key --init
+            pacman-key --populate archlinux
+            pacman -S --noconfirm git wget parted dosfstools e2fsprogs util-linux multipath-tools
+            modprobe loop || true
+            modprobe dm_mod || true
+
+            for i in $(seq 0 7); do
+              [ -e /dev/loop$i ] || mknod -m 660 /dev/loop$i b 7 $i || true
+            done
+
+            chmod +x build-arm-image.sh build-arm-minimal.sh
+            ./build-arm-minimal.sh rpi4
+            ./build-arm-image.sh rpi4
+          '
 
       - name: Upload aarch64 images
         uses: actions/upload-artifact@v4
