@@ -35,10 +35,10 @@ The LN Project is a Linux distribution based on Arch Linux, originally designed 
 * Rolling updates to keep software current. (tool to update easily TUI)
 * Easy to read Documentation source not only for LnOS but for any configurable tool thats on Arch Linux
 
-### Want to request a feature or report a bug, open an Issue!
+## Want to request a feature or report a bug, open an Issue!
 * [Github issues](https://github.com/uta-lug-nuts/LnOS/issues)
 
-### How to Contribute
+## How to Contribute
 We welcome contributions from UTA students, faculty and the FOSS Community!
 
 ### Report Issues: Use GitHub Issues to report bugs or suggest features.
@@ -50,9 +50,9 @@ We welcome contributions from UTA students, faculty and the FOSS Community!
 Click here to see guide on testing: [Testing](testing.md)
 (helpful when contributing)
 
-### Features
+## Features
 
-* **Target Architectures:** x86_64 and (aarch64/aarch32) 
+* **Target Architectures:** x86_64 and (aarch64 / aarch32) 
   * Arm we're still researching (v7 or v8)
 * **Base System:** Minimal Arch Linux with a rolling release model.
 * **Major Themed presets:** Engineers will have preset options to choose  
@@ -84,6 +84,17 @@ If you're installing the official release or building from source tree start bel
 Pre-built Ln OS ISOs are available with the installer included.
 
 #### Option 1: Download Pre-built ISO (source tree ISO)
+
+## Installation Instructions
+
+### Custom ISO Installation
+
+Pre-built LnOS ISOs are available with the installer included.
+
+#### Option 1: Download Pre-built ISO
+
+> ⚠️ **SECURITY NOTICE**: Always verify file signatures before use! All LnOS releases are digitally signed.
+
 1. Download the latest release from [GitHub Releases](https://github.com/uta-lug-nuts/LnOS/releases)
    - `lnos-x86_64-*.iso` for Intel/AMD 64-bit systems
    - `lnos-aarch64-*.iso` for ARM 64-bit systems (Raspberry Pi 4+)
@@ -159,7 +170,7 @@ docker run --rm --privileged \
 
 ### Development Environment
 
-To contribute to Ln OS, use the VS Code dev container:
+To contribute to LnOS, use the VS Code dev container:
 
 1. Install VS Code with "Dev Containers" extension
 2. Clone repository: `git clone https://github.com/uta-lug-nuts/LnOS.git`
@@ -187,7 +198,7 @@ The dev container includes:
 
 
 
-### Included Packages (CS Focus)
+## Included Packages (CS Focus)
 Here’s a preliminary list of tools for CS students:
 
 * Editors: VSCode (vscode), Vim
@@ -200,7 +211,7 @@ Here’s a preliminary list of tools for CS students:
 More tools will be added based on student feedback.
 
 
-### Resources We’ve Looked At
+## Resources We’ve Looked At
 
 [Arch Linux Official Site](https://archlinux.org)
 [Linux From Scratch](https://linuxfromscratch.org)
@@ -210,7 +221,25 @@ More tools will be added based on student feedback.
 * this has seriously been amazing
 
 
-### Known Issues
+## 🛡️ Security & Digital Signatures
+
+All LnOS releases are digitally signed with GPG to ensure authenticity and integrity.
+
+**GPG Key Information:**
+- **Key ID**: `9486759312876AD7`
+- **Fingerprint**: `FF3B 2203 9FA1 CBC0 72E5 8967 9486 7593 1287 6AD7`
+- **Owner**: LnOS Development Team
+
+**Why verify signatures?**
+- Ensures files haven't been corrupted during download
+- Protects against malicious file tampering
+- Confirms files are from the official LnOS team
+- Prevents man-in-the-middle attacks
+
+**Public Key Location**: [keys/lnos-public-key.asc](https://github.com/bakkertj/LnOS/blob/main/keys/lnos-public-key.asc)
+
+## Known Issues
+>>>>>>> upstream/main
 
 * Not fully reliable yet (still not even a 1.0.0 release)
 * ARM64 support is work in progress (basic support implemented)
