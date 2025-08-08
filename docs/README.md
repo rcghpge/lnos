@@ -238,7 +238,6 @@ All LnOS releases are digitally signed with GPG to ensure authenticity and integ
 **Public Key Location**: [keys/lnos-public-key.asc](https://github.com/bakkertj/LnOS/blob/main/keys/lnos-public-key.asc)
 
 ## Known Issues
->>>>>>> upstream/main
 
 * Not fully reliable yet (still not even a 1.0.0 release)
 * ARM64 support is work in progress (basic support implemented)
