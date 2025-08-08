@@ -7,7 +7,7 @@ on:
     paths:
       - 'archiso/**'
       - 'scripts/**'
-      - '.github/workflows/build-sandbox-iso.yml'
+      - '.github/workflows/build-iso.yml'
       - '*.sh'
   tags:
     - 'sandbox-*'
