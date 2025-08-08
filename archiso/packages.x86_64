@@ -5,7 +5,6 @@ linux
 linux-firmware
 xf86-video-fbdev
 xf86-video-vesa
-xf86-video-ast  
 
 # Filesystem support (critical for VirtualBox)
 btrfs-progs
@@ -29,13 +28,17 @@ lvm2
 mdadm
 
 # Network essentials
-systemd-networkd
 networkmanager
 dhcpcd
+dhclient
+wpa_supplicant
 iw
 iwd
+wireless_tools
+netctl
 wget
 curl
+dialog
 
 # Installation tools
 arch-install-scripts
