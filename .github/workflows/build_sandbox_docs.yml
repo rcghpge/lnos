@@ -46,36 +46,63 @@ jobs:
             } > docs/SUMMARY.md
           fi
 
-      - name: Ensure book.json exists (docs root + CSS/JS)
+      - name: Create GitHub header assets
         run: |
-          if [ ! -f book.json ]; then
-            echo '{
-              "_comment": "Docs live under docs",
-              "root": "./docs",
-              "styles": { "website": "styles/github-header.css" },
-              "scripts": [ "scripts/github-header.js" ],
-              "plugins": ["insert-html"],
-              "pluginsConfig": {
-                "insert-html": {
-                  "head:end": [
-                    "<meta name='\''mobile-web-app-capable'\'' content='\''yes'\''>",
-                    "<meta name='\''apple-mobile-web-app-capable'\'' content='\''yes'\''>"
-                  ]
-                }
-              }
-            }' > book.json
-          else
-            echo "book.json exists; not overwriting."
-            cat book.json
-          fi
+          mkdir -p docs/styles docs/scripts
 
-      - name: Verify header assets exist
-        run: |
-          test -f docs/styles/github-header.css || { echo "::error ::Missing docs/styles/github-header.css"; exit 1; }
-          test -f docs/scripts/github-header.js || { echo "::error ::Missing docs/scripts/github-header.js"; exit 1; }
+          cat > docs/styles/github-header.css <<'CSS' 
+            .github-header-btn {
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              width: 32px;
+              height: 32px;
+              margin-left: 8px;
+              border-radius: 6px;
+              text-decoration: none;
+              border: 1px solid var(--btn-border, #e0e0e0);
+              background: var(--btn-bg, #ffffff);
+              color: var(--btn-fg, #24292f);
+            }
+            .github-header-btn:hover { filter: brightness(0.96); }
+            .github-header-btn svg { width: 20px; height: 20px; fill: currentColor; }
+            @media (prefers-color-scheme: dark) {
+              .github-header-btn {
+                border-color: #2e2e2e;
+                background: #111111;
+                color: #f2f2f2;
+            }
+          }
+          CSS
+
+          cat > docs/scripts/github-header.js <<'JS'
+          document.addEventListener('DOMContentLoaded', function () {
+            console.log('[LnOS] github-header.js loaded');
+            const header = document.querySelector('.book-header');
+            if (!header) return;
+            const target = header.querySelector('.pull-right') || header;
+            if (!target) return;
+            if (target.querySelector('.github-header-btn')) return;
+            const a = document.createElement('a');
+            a.href = 'https://github.com/uta-lug-nuts/LnOS';
+            a.target = '_blank';
+            a.rel = 'noopener';
+            a.className = 'github-header-btn';
+            a.title = 'Upstream LnOS on GitHub';
+            a.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58..."/></svg>';
+            target.appendChild(a);
+          });
+          JS
 
       - name: Build Honkit Site (docs -> _book)
         run: npx honkit build docs _book
+
+      - name: Force-inject GitHub header assets into built HTML
+        run: |
+          mkdir -p _book/assets
+          cp docs/styles/github-header.css _book/assets/github-header.css
+          cp docs/scripts/github-header.js _book/assets/github-header.js
+          find _book -name "*.html" -exec sed -i '/<\/body>/i <link rel="stylesheet" href="\/assets\/github-header.css">\n<script src="\/assets\/github-header.js"><\/script>' {} +
 
       - name: Add .nojekyll
         run: touch _book/.nojekyll
