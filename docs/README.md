@@ -5,7 +5,7 @@
 [![CodeQL](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql)
 [![LnOS CI/CD](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml)
 
-### LnOS — Arch Configured. Built at UT.
+### LnOS @ Sandbox — Arch Configured. Built at UT.
 
 > *"A UTA flavored distro with all the applications and tools the different engineering majors use."*  
 > — Professor Bakker
