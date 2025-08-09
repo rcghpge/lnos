@@ -1,7 +1,7 @@
 {
   "root": "./docs",
-  "styles": { "website": "docs/styles/github-header.css" },
-  "scripts": [ "docs/scripts/github-header.js" ],
+  "styles": { "website": "styles/github-header.css" },
+  "scripts": [ "scripts/github-header.js" ],
   "plugins": ["insert-html"],
   "pluginsConfig": {
     "insert-html": {
