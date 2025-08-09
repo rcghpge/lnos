@@ -22,6 +22,9 @@ on:
           - 'aarch64'
           - 'both'
 
+env:
+  TZ: America/Chicago
+  
 permissions:
   contents: write
 
