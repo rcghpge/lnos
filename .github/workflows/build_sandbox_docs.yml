@@ -2,7 +2,7 @@ name: Sandbox Docs
 
 on:
   push:
-    branches: ["main"]
+    branches: ["sandbox"]
   workflow_dispatch:
 
 permissions:
