@@ -235,11 +235,23 @@ jobs:
 
   create-release:
     if: ${{ github.ref == 'refs/heads/sandbox' || startsWith(github.ref, 'refs/tags/sandbox-') }}
+    needs: [build-x86_64, build-aarch64]
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Compute version + tag
+        id: version
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/sandbox-* ]]; then
+            V="$(basename "${GITHUB_REF}" | sed 's/^sandbox-//; s/^sandbox-v//')"
+          else
+            V="$(date +%Y.%m.%d)"
+          fi
+          echo "VERSION=$V" >> "$GITHUB_OUTPUT"
+          echo "TAG_NAME=sandbox-v$V" >> "$GITHUB_OUTPUT"
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -248,14 +260,26 @@ jobs:
           merge-multiple: true
           path: ./release-assets/
 
+      - name: Check pre-lease assets exist
+        run: |
+          shopt -s nullglob
+          files=(release-assets/*.{iso,img,img.xz})
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "❌ No built assets found. Did the build jobs skip or fail?"
+            find ./release-assets -maxdepth 2 -type f -ls || true
+            exit 1
+          fi
+          echo "✅ Found ${#files[@]} files"
+
       - name: Final artifact listing
         run: find ./release-assets -type f -ls || true
 
-      - name: Create GitHub Release with Sandbox Assets
+      - name: Create GitHub Pre‑Release with Sandbox Assets
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref_name }}
-          name: LnOS Sandbox Release ${{ github.ref_name }}
+          tag_name: ${{ steps.version.outputs.TAG_NAME }}
+          name: LnOS Sandbox Pre‑Release ${{ steps.version.outputs.TAG_NAME }}
+          prerelease: true
           body: |
             🚧 **Sandbox Build** for testing & preview
             This release contains ISO/IMGs from the sandbox branch.
@@ -266,13 +290,12 @@ jobs:
 
             ⚠️ Not production ready. Use only for development/QA.
           files: |
-            ./release-assets/**/*.iso
-            ./release-assets/**/*.iso.asc
-            ./release-assets/**/SHA256SUMS
-            ./release-assets/**/*.img
-            ./release-assets/**/*.img.xz
-            ./release-assets/**/*.img.asc
-            ./release-assets/**/*.img.xz.asc
+            ./release-assets/*.iso
+            ./release-assets/*.iso.asc
+            ./release-assets/*.img
+            ./release-assets/*.img.xz
+            ./release-assets/*.img.asc
+            ./release-assets/*.img.xz.asc
+            ./release-assets/SHA256SUMS
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
