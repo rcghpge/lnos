@@ -79,10 +79,10 @@ jobs:
           test -f docs/scripts/github-header.js || { echo "::error ::Missing docs/scripts/github-header.js"; exit 1; }
 
       - name: Build Honkit Site (lnos/docs -> lnos/_book)
-        run: npx honkit build lnos/docs lnos/_book
+        run: npx honkit build docs _book
 
       - name: Add .nojekyll
-        run: touch lnos/_book/.nojekyll
+        run: touch _book/.nojekyll
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -90,7 +90,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: lnos/_book
+          path: _book
 
   deploy:
     runs-on: ubuntu-latest
