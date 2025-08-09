@@ -46,7 +46,7 @@ jobs:
             } > docs/SUMMARY.md
           fi
 
-      - name: Create book.json if missing (points to docs + loads CSS/JS)
+      - name: Ensure book.json exists (docs root + CSS/JS)
         run: |
           if [ ! -f book.json ]; then
             echo '{
@@ -68,13 +68,13 @@ jobs:
             echo "book.json exists; not overwriting."
             cat book.json
           fi
-          
-      - name: Verify assets exist (fail fast if missing)
+
+      - name: Verify header assets exist
         run: |
           test -f docs/styles/github-header.css || { echo "::error ::Missing docs/styles/github-header.css"; exit 1; }
           test -f docs/scripts/github-header.js || { echo "::error ::Missing docs/scripts/github-header.js"; exit 1; }
 
-      - name: Build Honkit Site (lnos/docs -> lnos/_book)
+      - name: Build Honkit Site (docs -> _book)
         run: npx honkit build docs _book
 
       - name: Add .nojekyll
