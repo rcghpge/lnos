@@ -36,38 +36,39 @@ jobs:
       - name: Generate SUMMARY.md (if missing)
         run: |
           if [ ! -f lnos/docs/SUMMARY.md ]; then
-            echo "# Summary" > lnos/docs/SUMMARY.md
-            echo "" >> lnos/docs/SUMMARY.md
-            echo "* [Introduction](README.md)" >> lnos/docs/SUMMARY.md
-            for file in lnos/docs/*.md; do
-              [ -f "$file" ] || continue
-              base=$(basename "$file")
-              [ "$base" = "README.md" ] && continue
-              title=$(basename "$file" .md | tr '_' ' ' | sed 's/\b\w/\u&/g')
-              echo "* [$title]($base)" >> lnos/docs/SUMMARY.md
-            done
+            {
+              echo "# Summary"
+              echo
+              echo "* [Introduction](README.md)"
+              for file in lnos/docs/*.md; do
+                [ -f "$file" ] || continue
+                base=$(basename "$file")
+                [ "$base" = "README.md" ] && continue
+                title=$(basename "$file" .md | tr '_' ' ' | sed 's/\b\w/\u&/g')
+                echo "* [$title]($base)"
+              done
+            } > lnos/docs/SUMMARY.md
           fi
 
       - name: Create book.json if missing (points to lnos/docs + loads CSS/JS)
         run: |
           if [ ! -f book.json ]; then
-            cat > book.json <<'JSON'
-{
-  "_comment": "Docs live under lnos/docs",
-  "root": "./lnos/docs",
-  "styles": { "website": "styles/github-header.css" },
-  "scripts": [ "scripts/github-header.js" ],
-  "plugins": ["insert-html"],
-  "pluginsConfig": {
-    "insert-html": {
-      "head:end": [
-        "<meta name='mobile-web-app-capable' content='yes'>",
-        "<meta name='apple-mobile-web-app-capable' content='yes'>"
-      ]
-    }
-  }
-}
-JSON
+            printf '%s\n' \
+'{' \
+'  "_comment": "Docs live under lnos/docs",' \
+'  "root": "./lnos/docs",' \
+'  "styles": { "website": "styles/github-header.css" },' \
+'  "scripts": [ "scripts/github-header.js" ],' \
+'  "plugins": ["insert-html"],' \
+'  "pluginsConfig": {' \
+'    "insert-html": {' \
+'      "head:end": [' \
+'        "<meta name='\''mobile-web-app-capable'\'' content='\''yes'\''>",' \
+'        "<meta name='\''apple-mobile-web-app-capable'\'' content='\''yes'\''>"' \
+'      ]' \
+'    }' \
+'  }' \
+'}' > book.json
           else
             echo "book.json exists; not overwriting."
             cat book.json
