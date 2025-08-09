@@ -1,0 +1,105 @@
+name: Sandbox Docs
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Honkit
+        run: npm install honkit --save-dev
+
+      - name: Ensure docs structure exists
+        run: |
+          mkdir -p lnos/docs/styles lnos/docs/scripts
+
+      - name: Generate SUMMARY.md (if missing)
+        run: |
+          if [ ! -f lnos/docs/SUMMARY.md ]; then
+            echo "# Summary" > lnos/docs/SUMMARY.md
+            echo "" >> lnos/docs/SUMMARY.md
+            echo "* [Introduction](README.md)" >> lnos/docs/SUMMARY.md
+            for file in lnos/docs/*.md; do
+              [ -f "$file" ] || continue
+              base=$(basename "$file")
+              [ "$base" = "README.md" ] && continue
+              title=$(basename "$file" .md | tr '_' ' ' | sed 's/\b\w/\u&/g')
+              echo "* [$title]($base)" >> lnos/docs/SUMMARY.md
+            done
+          fi
+      
+      - name: Create book.json if missing (points to lnos/docs + loads CSS/JS)
+        run: |
+          if [ ! -f book.json ]; then
+            cat > book.json <<'JSON'
+            {
+              "_comment": "Docs live under lnos/docs",
+              "root": "./lnos/docs",
+              "styles": { "website": "styles/github-header.css" },
+              "scripts": [ "scripts/github-header.js" ],
+              "plugins": ["insert-html"],
+              "pluginsConfig": {
+                "insert-html": {
+                  "head:end": [
+                    "<meta name='mobile-web-app-capable' content='yes'>",
+                    "<meta name='apple-mobile-web-app-capable' content='yes'>"
+                  ]
+                }
+              }
+            }
+            JSON
+          else
+            echo "book.json exists; not overwriting."
+            cat book.json
+          fi
+
+      - name: Verify custom assets exist (fail fast if missing)
+        run: |
+          test -f lnos/docs/styles/github-header.css || { echo "::error ::Missing lnos/docs/styles/github-header.css"; exit 1; }
+          test -f lnos/docs/scripts/github-header.js || { echo "::error ::Missing lnos/docs/scripts/github-header.js"; exit 1; }
+
+      - name: Build Honkit Site (lnos/docs -> lnos/_book)
+        run: npx honkit build lnos/docs lnos/_book
+
+      - name: Add .nojekyll
+        run: touch lnos/_book/.nojekyll
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: lnos/_book
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
