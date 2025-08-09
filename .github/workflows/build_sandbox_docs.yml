@@ -29,10 +29,6 @@ jobs:
       - name: Install Honkit
         run: npm install honkit --save-dev
 
-      - name: Ensure docs structure exists
-        run: |
-          mkdir -p docs/styles docs/scripts
-
       - name: Generate SUMMARY.md (if missing)
         run: |
           if [ ! -f docs/SUMMARY.md ]; then
@@ -47,10 +43,10 @@ jobs:
                 title=$(basename "$file" .md | tr '_' ' ' | sed 's/\b\w/\u&/g')
                 echo "* [$title]($base)"
               done
-            } > lnos/docs/SUMMARY.md
+            } > docs/SUMMARY.md
           fi
 
-      - name: Create book.json if missing (points to lnos/docs + loads CSS/JS)
+      - name: Create book.json if missing (points to docs + loads CSS/JS)
         run: |
           if [ ! -f book.json ]; then
             echo '{
