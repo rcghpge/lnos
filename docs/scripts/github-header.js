@@ -1,21 +1,35 @@
 document.addEventListener('DOMContentLoaded', function () {
-  // Find the Honkit header; “buttons” group varies by theme, so fall back to header
+  console.log('[LnOS] github-header.js loaded');
+
   const header = document.querySelector('.book-header');
-  if (!header) return;
+  console.log('[LnOS] header element:', header);
 
-  // Prefer right-side controls group if present; else, use header root
-  const rightSide = header.querySelector('.pull-right') || header;
+  const rightSide = header
+    ? (header.querySelector('.pull-right') ||
+       header.querySelector('.buttons') ||
+       header.querySelector('.navbar') ||
+       header.querySelector('div'))
+    : null;
+  console.log('[LnOS] rightSide element:', rightSide);
 
-  // Build the GitHub button
+  if (!rightSide) {
+    console.warn('[LnOS] No header target found — cannot insert GitHub logo.');
+    return;
+  }
+
+  if (rightSide.querySelector('.github-header-btn')) {
+    console.log('[LnOS] GitHub button already present');
+    return;
+  }
+
   const a = document.createElement('a');
-  a.href = 'https://github.com/uta-lug-nuts/LnOS';   // <- upstream link
+  a.href = 'https://github.com/uta-lug-nuts/LnOS';
   a.target = '_blank';
   a.rel = 'noopener';
   a.className = 'github-header-btn';
   a.title = 'Upstream LnOS on GitHub';
   a.setAttribute('aria-label', 'Upstream LnOS on GitHub');
 
-  // Inline SVG GitHub mark (no external assets needed)
   a.innerHTML = `
     <svg viewBox="0 0 16 16" aria-hidden="true">
       <path d="M8 0C3.58 0 0 3.58 0 8a8 8 0 0 0 5.47 7.59c.4.07.55-.17.55-.38
@@ -29,11 +43,6 @@ document.addEventListener('DOMContentLoaded', function () {
     </svg>
   `;
 
-  // Set GiHub repository link as the first control on the right
-  if (rightSide.firstChild) {
-    rightSide.insertBefore(a, rightSide.firstChild);
-  } else {
-    rightSide.appendChild(a);
-  }
+  rightSide.appendChild(a);
+  console.log('[LnOS] GitHub header button inserted');
 });
-
