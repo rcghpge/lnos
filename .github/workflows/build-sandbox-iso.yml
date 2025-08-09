@@ -244,6 +244,8 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
+          pattern: lnos-*-sandbox
+          merge-multiple: true
           path: ./release-assets/
 
       - name: Final artifact listing
