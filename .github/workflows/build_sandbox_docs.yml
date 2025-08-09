@@ -47,7 +47,7 @@ jobs:
               echo "* [$title]($base)" >> lnos/docs/SUMMARY.md
             done
           fi
-      
+
       - name: Create book.json if missing (points to lnos/docs + loads CSS/JS)
         run: |
           if [ ! -f book.json ]; then
@@ -73,7 +73,7 @@ jobs:
             cat book.json
           fi
 
-      - name: Verify custom assets exist (fail fast if missing)
+      - name: Ve3rk5 r34assets exist (fail fast if missing)
         run: |
           test -f lnos/docs/styles/github-header.css || { echo "::error ::Missing lnos/docs/styles/github-header.css"; exit 1; }
           test -f lnos/docs/scripts/github-header.js || { echo "::error ::Missing lnos/docs/scripts/github-header.js"; exit 1; }
