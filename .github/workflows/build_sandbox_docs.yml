@@ -31,16 +31,16 @@ jobs:
 
       - name: Ensure docs structure exists
         run: |
-          mkdir -p lnos/docs/styles lnos/docs/scripts
+          mkdir -p docs/styles docs/scripts
 
       - name: Generate SUMMARY.md (if missing)
         run: |
-          if [ ! -f lnos/docs/SUMMARY.md ]; then
+          if [ ! -f docs/SUMMARY.md ]; then
             {
               echo "# Summary"
               echo
               echo "* [Introduction](README.md)"
-              for file in lnos/docs/*.md; do
+              for file in docs/*.md; do
                 [ -f "$file" ] || continue
                 base=$(basename "$file")
                 [ "$base" = "README.md" ] && continue
@@ -54,8 +54,8 @@ jobs:
         run: |
           if [ ! -f book.json ]; then
             echo '{
-              "_comment": "Docs live under lnos/docs",
-              "root": "./lnos/docs",
+              "_comment": "Docs live under docs",
+              "root": "./docs",
               "styles": { "website": "styles/github-header.css" },
               "scripts": [ "scripts/github-header.js" ],
               "plugins": ["insert-html"],
@@ -75,8 +75,8 @@ jobs:
           
       - name: Verify assets exist (fail fast if missing)
         run: |
-          test -f lnos/docs/styles/github-header.css || { echo "::error ::Missing lnos/docs/styles/github-header.css"; exit 1; }
-          test -f lnos/docs/scripts/github-header.js || { echo "::error ::Missing lnos/docs/scripts/github-header.js"; exit 1; }
+          test -f docs/styles/github-header.css || { echo "::error ::Missing docs/styles/github-header.css"; exit 1; }
+          test -f docs/scripts/github-header.js || { echo "::error ::Missing docs/scripts/github-header.js"; exit 1; }
 
       - name: Build Honkit Site (lnos/docs -> lnos/_book)
         run: npx honkit build lnos/docs lnos/_book
