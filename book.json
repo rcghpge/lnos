@@ -1,4 +1,16 @@
 {
-    "_comment": "Set the root directory for documentation in /docs",
-    "root": "./docs"
+  "_comment": "Set the root directory for documentation in /docs",
+  "root": "./docs",
+  "styles": {
+    "website": "styles/github-header.css"
+  },
+  "plugins": ["insert-html"],
+  "pluginsConfig": {
+    "insert-html": {
+      "body:end": [
+        "<script src='scripts/github-header.js'></script>"
+      ]
+    }
+  }
 }
+
