@@ -53,27 +53,26 @@ jobs:
       - name: Create book.json if missing (points to lnos/docs + loads CSS/JS)
         run: |
           if [ ! -f book.json ]; then
-            printf '%s\n' \
-'{' \
-'  "_comment": "Docs live under lnos/docs",' \
-'  "root": "./lnos/docs",' \
-'  "styles": { "website": "styles/github-header.css" },' \
-'  "scripts": [ "scripts/github-header.js" ],' \
-'  "plugins": ["insert-html"],' \
-'  "pluginsConfig": {' \
-'    "insert-html": {' \
-'      "head:end": [' \
-'        "<meta name='\''mobile-web-app-capable'\'' content='\''yes'\''>",' \
-'        "<meta name='\''apple-mobile-web-app-capable'\'' content='\''yes'\''>"' \
-'      ]' \
-'    }' \
-'  }' \
-'}' > book.json
+            echo '{
+              "_comment": "Docs live under lnos/docs",
+              "root": "./lnos/docs",
+              "styles": { "website": "styles/github-header.css" },
+              "scripts": [ "scripts/github-header.js" ],
+              "plugins": ["insert-html"],
+              "pluginsConfig": {
+                "insert-html": {
+                  "head:end": [
+                    "<meta name='\''mobile-web-app-capable'\'' content='\''yes'\''>",
+                    "<meta name='\''apple-mobile-web-app-capable'\'' content='\''yes'\''>"
+                  ]
+                }
+              }
+            }' > book.json
           else
             echo "book.json exists; not overwriting."
             cat book.json
           fi
-
+          
       - name: Verify assets exist (fail fast if missing)
         run: |
           test -f lnos/docs/styles/github-header.css || { echo "::error ::Missing lnos/docs/styles/github-header.css"; exit 1; }
