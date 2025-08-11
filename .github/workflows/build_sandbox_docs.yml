@@ -1,0 +1,127 @@
+name: Sandbox Docs
+
+on:
+  push:
+    branches: ["sandbox"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Honkit
+        run: npm install honkit --save-dev
+
+      - name: Generate SUMMARY.md (if missing)
+        run: |
+          if [ ! -f docs/SUMMARY.md ]; then
+            {
+              echo "# Summary"
+              echo
+              echo "* [Introduction](README.md)"
+              for file in docs/*.md; do
+                [ -f "$file" ] || continue
+                base=$(basename "$file")
+                [ "$base" = "README.md" ] && continue
+                title=$(basename "$file" .md | tr '_' ' ' | sed 's/\b\w/\u&/g')
+                echo "* [$title]($base)"
+              done
+            } > docs/SUMMARY.md
+          fi
+
+      - name: Create GitHub header assets
+        run: |
+          mkdir -p docs/styles docs/scripts
+
+          cat > docs/styles/github-header.css <<'CSS' 
+            .github-header-btn {
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              width: 32px;
+              height: 32px;
+              margin-left: 8px;
+              border-radius: 6px;
+              text-decoration: none;
+              border: 1px solid var(--btn-border, #e0e0e0);
+              background: var(--btn-bg, #ffffff);
+              color: var(--btn-fg, #24292f);
+            }
+            .github-header-btn:hover { filter: brightness(0.96); }
+            .github-header-btn svg { width: 20px; height: 20px; fill: currentColor; }
+            @media (prefers-color-scheme: dark) {
+              .github-header-btn {
+                border-color: #2e2e2e;
+                background: #111111;
+                color: #f2f2f2;
+            }
+          }
+          CSS
+
+          cat > docs/scripts/github-header.js <<'JS'
+          document.addEventListener('DOMContentLoaded', function () {
+            console.log('[LnOS] github-header.js loaded');
+            const header = document.querySelector('.book-header');
+            if (!header) return;
+            const target = header.querySelector('.pull-right') || header;
+            if (!target) return;
+            if (target.querySelector('.github-header-btn')) return;
+            const a = document.createElement('a');
+            a.href = 'https://github.com/uta-lug-nuts/LnOS';
+            a.target = '_blank';
+            a.rel = 'noopener';
+            a.className = 'github-header-btn';
+            a.title = 'Upstream LnOS on GitHub';
+            a.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58..."/></svg>';
+            target.appendChild(a);
+          });
+          JS
+
+      - name: Build Honkit Site (docs -> _book)
+        run: npx honkit build docs _book
+
+      - name: Force-inject GitHub header assets into built HTML
+        run: |
+          mkdir -p _book/assets
+          cp docs/styles/github-header.css _book/assets/github-header.css
+          cp docs/scripts/github-header.js _book/assets/github-header.js
+          find _book -name "*.html" -exec sed -i '/<\/body>/i <link rel="stylesheet" href="\/assets\/github-header.css">\n<script src="\/assets\/github-header.js"><\/script>' {} +
+
+      - name: Add .nojekyll
+        run: touch _book/.nojekyll
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _book
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

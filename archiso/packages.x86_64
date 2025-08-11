@@ -3,6 +3,8 @@
 base
 linux
 linux-firmware
+xf86-video-fbdev
+xf86-video-vesa
 
 # Filesystem support (critical for VirtualBox)
 btrfs-progs
@@ -28,9 +30,15 @@ mdadm
 # Network essentials
 networkmanager
 dhcpcd
+dhclient
+wpa_supplicant
 iw
+iwd
+wireless_tools
+netctl
 wget
 curl
+dialog
 
 # Installation tools
 arch-install-scripts

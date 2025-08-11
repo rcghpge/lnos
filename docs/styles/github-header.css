@@ -1,0 +1,26 @@
+/* Small button that matches Honkit header sizing */
+.github-header-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:32px;
+  height:32px;
+  margin-left:8px;
+  border-radius:6px;
+  text-decoration:none;
+  border:1px solid var(--btn-border, #e0e0e0);
+  background: var(--btn-bg, #ffffff);
+  color: var(--btn-fg, #24292f);
+}
+.github-header-btn:hover { filter: brightness(0.96); }
+.github-header-btn svg { width:20px; height:20px; fill: currentColor; }
+
+/* Respect light/dark */
+@media (prefers-color-scheme: dark){
+  .github-header-btn{
+    border-color: var(--btn-border, #2e2e2e);
+    background: var(--btn-bg, #111111);
+    color: var(--btn-fg, #f2f2f2);
+  }
+}
+

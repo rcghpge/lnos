@@ -1,0 +1,304 @@
+name: Build LnOS Sandbox ISO
+# Sandbox ISOs and Images builder for development/testing.
+
+on:
+  push:
+    branches: [sandbox]
+    tags: ['sandbox-v*']
+    paths:
+      - 'archiso/**'
+      - 'scripts/**'
+      - '.github/workflows/build-sandbox-iso.yml'
+      - '*.sh'
+  workflow_dispatch:
+    inputs:
+      architecture:
+        description: 'Target architecture'
+        required: true
+        default: 'x86_64'
+        type: choice
+        options:
+          - 'x86_64'
+          - 'aarch64'
+          - 'both'
+
+env:
+  TZ: America/Chicago
+  
+permissions:
+  contents: write
+
+concurrency:
+  group: sandbox-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-x86_64:
+    if: ${{ github.event.inputs.architecture == 'x86_64'
+           || github.event.inputs.architecture == 'both'
+           || github.event.inputs.architecture == ''
+           || startsWith(github.ref, 'refs/tags/sandbox-')
+           || github.ref == 'refs/heads/sandbox' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check versions from tag
+        id: version
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/sandbox-* ]]; then
+            VERSION=$(basename "${GITHUB_REF}" | sed 's/^sandbox-//')
+          else
+            VERSION=$(date +%Y.%m.%d)
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: x86_64 ISO builds in Docker
+        run: |
+          docker run --rm --privileged \
+            --cap-add=ALL \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            -e HOST_UID=$(id -u) \
+            -e HOST_GID=$(id -g) \
+            archlinux:latest \
+            bash -euxo pipefail -c '
+              pacman -Syu --noconfirm
+              pacman -S --noconfirm archlinux-keyring gnupg
+              pacman-key --init
+              pacman-key --populate archlinux
+              pacman -S --noconfirm base-devel git archiso grub sudo
+              groupadd -g $HOST_GID builder || true
+              useradd  -u $HOST_UID -g $HOST_GID -m builder || true
+
+              printf "builder ALL=(ALL) NOPASSWD: ALL\n" > /etc/sudoers.d/builder
+              chmod 0440 /etc/sudoers.d/builder
+              visudo -cf /etc/sudoers
+              chown -R $HOST_UID:$HOST_GID /workspace
+              sudo -u builder bash -c "
+                chmod +x build-iso.sh
+                chmod +x archiso/airootfs/root/customize_airootfs.sh || true
+                ./build-iso.sh x86_64
+              "
+            '
+
+      - name: Check Sandbox ISOs; generate checksums
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          ISO=$(ls out/*.iso 2>/dev/null | head -n1 || true)
+          if [[ -z "${ISO:-}" ]]; then
+            echo "❌ No ISO found under ./out after build."
+            find out -maxdepth 2 -type f -ls || true
+            exit 1
+          fi
+          NEWNAME="lnos-${{ steps.version.outputs.VERSION }}-x86_64-sandbox.iso"
+          mv "$ISO" "out/$NEWNAME"
+          sha256sum "out/$NEWNAME" | tee out/SHA256SUMS
+
+      - name: Import GPG key & sign ISO
+        env:
+          GNUPGHOME: ${{ runner.temp }}/.gnupg
+          GPG_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$GNUPGHOME"; chmod 700 "$GNUPGHOME"
+          if echo "$GPG_KEY" | head -1 | grep -q "BEGIN PGP PRIVATE KEY BLOCK"; then
+            echo "$GPG_KEY" | gpg --batch --import
+          else
+            echo "$GPG_KEY" | base64 --decode | gpg --batch --import -
+          fi
+          gpg --batch --yes --pinentry-mode loopback \
+            --passphrase "$PASSPHRASE" \
+            --armor --detach-sign \
+            --output out/lnos-${{ steps.version.outputs.VERSION }}-x86_64-sandbox.iso.asc \
+            out/lnos-${{ steps.version.outputs.VERSION }}-x86_64-sandbox.iso
+
+      - name: Upload ISO, signature, and checksums
+        uses: actions/upload-artifact@v4
+        with:
+          name: lnos-${{ steps.version.outputs.VERSION }}-x86_64-sandbox
+          path: |
+            out/lnos-${{ steps.version.outputs.VERSION }}-x86_64-sandbox.iso
+            out/lnos-${{ steps.version.outputs.VERSION }}-x86_64-sandbox.iso.asc
+            out/SHA256SUMS
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+
+      - name: Generate Sandbox Tag
+        if: ${{ github.ref == 'refs/heads/sandbox' }}
+        run: |
+          TAG_NAME="sandbox-v${{ steps.version.outputs.VERSION }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "$TAG_NAME"
+          git push origin "$TAG_NAME"
+
+  build-aarch64:
+    if: ${{ github.event.inputs.architecture == 'aarch64'
+           || github.event.inputs.architecture == 'both'
+           || github.event.inputs.architecture == ''
+           || startsWith(github.ref, 'refs/tags/sandbox-')
+           || github.ref == 'refs/heads/sandbox' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Build aarch64 SD card images in Docker
+        run: |
+          docker run --rm --privileged \
+            --cap-add=ALL \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            -e HOST_UID=$(id -u) \
+            -e HOST_GID=$(id -g) \
+            archlinux:latest \
+            bash -euxo pipefail -c '
+              pacman -Syu --noconfirm
+              pacman -S --noconfirm archlinux-keyring gnupg
+              pacman-key --init
+              pacman-key --populate archlinux
+              pacman -S --noconfirm git wget parted dosfstools e2fsprogs
+              chmod +x build-arm-image.sh build-arm-minimal.sh
+
+              # inline extractor
+              extract_kernel_bundle() { 
+                local TAR="$1" DEST="$2"; mkdir -p "$DEST"
+                local CONTENTS; CONTENTS="$(tar -tzf "$TAR")"
+                for p in boot usr/lib/modules lib/modules usr/lib/firmware lib/firmware; do
+                  if grep -q "^${p}/" <<<"$CONTENTS"; then
+                    tar --warning=no-unknown-keyword -xzf "$TAR" -C "$DEST" "$p" \
+                      --no-same-owner --no-same-permissions
+                  fi
+                done
+              } 
+
+              ./build-arm-minimal.sh rpi4 || true
+              TAR_BUNDLE="$(ls /tmp/linux*rpi*.tar.gz 2>/dev/null | head -n1 || true)"
+              if [[ -n "$TAR_BUNDLE" ]]; then
+                DEST="/workspace/out/rootfs"; mkdir -p "$DEST"
+                extract_kernel_bundle "$TAR_BUNDLE" "$DEST"
+              fi
+              ./build-arm-image.sh rpi4
+
+              # 👇 UID/GID checks write/sign artifacts
+              chown -R $HOST_UID:$HOST_GID /workspace/out || true
+            '
+
+      - name: Import GPG key & sign ARM images
+        env:
+          GNUPGHOME: ${{ runner.temp }}/.gnupg
+          GPG_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          if compgen -G "out/*.img" > /dev/null || compgen -G "out/*.img.xz" > /dev/null; then
+            mkdir -p "$GNUPGHOME"; chmod 700 "$GNUPGHOME"
+            if echo "$GPG_KEY" | head -1 | grep -q "BEGIN PGP PRIVATE KEY BLOCK"; then
+              echo "$GPG_KEY" | gpg --batch --import
+            else
+              echo "$GPG_KEY" | base64 --decode | gpg --batch --import -
+            fi
+            for f in out/*.img out/*.img.xz; do
+              [ -f "$f" ] || continue
+              gpg --batch --yes --pinentry-mode loopback \
+                --passphrase "$PASSPHRASE" \
+                --armor --detach-sign \
+                --output "$f.asc" \
+                "$f"
+            done
+          else
+            echo "ℹ️ No ARM images to sign."
+          fi
+
+      - name: Upload aarch64 images
+        uses: actions/upload-artifact@v4
+        with:
+          name: lnos-aarch64-rpi4-sandbox
+          path: |
+            out/*.img
+            out/*.img.xz
+            out/*.img.asc
+            out/*.img.xz.asc
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+
+  create-release:
+    if: ${{ github.ref == 'refs/heads/sandbox' || startsWith(github.ref, 'refs/tags/sandbox-') }}
+    needs: [build-x86_64, build-aarch64]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compute version + tag
+        id: version
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/sandbox-* ]]; then
+            V="$(basename "${GITHUB_REF}" | sed 's/^sandbox-//; s/^sandbox-v//')"
+          else
+            V="$(date +%Y.%m.%d)"
+          fi
+          echo "VERSION=$V" >> "$GITHUB_OUTPUT"
+          echo "TAG_NAME=sandbox-v$V" >> "$GITHUB_OUTPUT"
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: lnos-*-sandbox
+          merge-multiple: true
+          path: ./release-assets/
+
+      - name: Check pre-lease assets exist
+        run: |
+          shopt -s nullglob
+          files=(release-assets/*.{iso,img,img.xz})
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "❌ No built assets found. Did the build jobs skip or fail?"
+            find ./release-assets -maxdepth 2 -type f -ls || true
+            exit 1
+          fi
+          echo "✅ Found ${#files[@]} files"
+
+      - name: Final artifact listing
+        run: find ./release-assets -type f -ls || true
+
+      - name: Create GitHub Pre‑Release with Sandbox Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.TAG_NAME }}
+          name: LnOS Sandbox Pre‑Release ${{ steps.version.outputs.TAG_NAME }}
+          prerelease: true
+          body: |
+            🚧 **Sandbox Build** for testing & preview
+            This release contains ISO/IMGs from the sandbox branch.
+
+            Artifacts:
+            - GPG signed `.iso` and `.img` files
+            - SHA256SUMS
+
+            ⚠️ Not production ready. Use only for development/QA.
+          files: |
+            ./release-assets/*.iso
+            ./release-assets/*.iso.asc
+            ./release-assets/*.img
+            ./release-assets/*.img.xz
+            ./release-assets/*.img.asc
+            ./release-assets/*.img.xz.asc
+            ./release-assets/SHA256SUMS
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

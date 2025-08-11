@@ -1,8 +1,20 @@
-<center><img src="https://github.com/uta-lug-nuts/LnOS/blob/main/docs/images/Tux_with_toolbox.png?raw=true" width=50% alt="tux with toolbox"></center>
+# lnos
 
+### LnOS @ Sandbox — Arch Configured. Built at UT.
+
+> *"A UTA flavored distro with all the applications and tools the different engineering majors use."*  
+> — Professor Bakker
+
+<br>
+<div align="center">
+  <img src="https://github.com/rcghpge/lnos/blob/main/docs/images/Tux_with_toolbox.png?raw=true" width="50%" alt="Tux with toolbox">
+</div>
+<br>
+
+[![Sandbox](https://github.com/rcghpge/lnos/actions/workflows/ci-sandbox.yml/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/ci-sandbox.yml)
+[![ShellCheck](https://github.com/rcghpge/lnos/actions/workflows/lint.yml/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/lint.yml)
 [![CodeQL](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql)
 [![LnOS CI/CD](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml)
-
 ![GPG Signed](https://img.shields.io/badge/GPG-Signed-brightgreen?style=for-the-badge&logo=gnupg)
 ![Security Verified](https://img.shields.io/badge/Security-Verified-blue?style=for-the-badge&logo=shield)
 ![Integrity Guaranteed](https://img.shields.io/badge/Integrity-Guaranteed-orange?style=for-the-badge&logo=checkmarx)
@@ -11,14 +23,18 @@
 
 **🔒 All releases are cryptographically signed for authenticity and integrity**
 
-"A UTA flavored distro with all the applications and tools the different engineering majors use" - Professor Bakker
+---
 
-## Overview
-The-LN-Project is a custom Linux distribution based on Arch Linux, designed specifically for University of Texas at Arlington (UTA) students. It aims to provide a lightweight, flexible, and powerful environment tailored to the needs of engineering students.The distro supports both x86_64 and ARM architectures (e.g., Raspberry Pi), ensuring compatibility with a wide range of student hardware.
+### Overview
+> ℹ️ Note:
+> This is a sandbox branch build of Ln OS source tree. It's an early-stage build for building and testing new features and workflows.
+> For source tree check out the latest build here: [Ln OS](https://github.com/uta-lug-nuts/LnOS.git)
 
-* First focused discipline is Computer Science (CS). 
+The LN Project is a Linux distribution based on Arch Linux, originally designed for University of Texas at Arlington (UTA) students. It aims to provide a lightweight, flexible, and powerful environment tailored to the needs of engineering students. The distro supports both x86_64 and ARM architectures (e.g., Raspberry Pi), ensuring compatibility with a wide range of student hardware.
 
-## Goals 
+* First focus discipline is Computer Science (CS). 
+
+### Goals 
 
 * Lightweight and minimal base, built from Arch Linux.
 * Pre-configured tools for CS students, with plans to expand to other engineering disciplines (e.g., EE).
@@ -52,7 +68,22 @@ Click here to see guide on testing: [Testing](testing.md)
 * Documentation: Guides and support for UTA students on installation and customization of tools.
 
 
-## Installation Instructions
+### Installation Instructions for Source Tree and Sandbox Club Development
+
+The installation below mirrors source tree for official releases. For this version with sandbox development:
+```bash
+# Clone the GitHub repository
+git clone --origin origin --no-single-branch https://github.com/rcghpge/lnos.git
+cd lnos
+
+# List all remote branches
+git branch -r
+
+# Checkout your desired branch locally
+git checkout -b sandbox origin/sandbox   # or merge, stable, etc.
+```
+
+If you're installing the official release or building from source tree start below at custom ISO installation for standard setup steps, including ISO flashing and installation from stable source tree builds.
 
 ### Custom ISO Installation
 
@@ -220,4 +251,4 @@ Inspired by Professor Bakker’s and UTA LUGNUTS Community of a vision for a UTA
 Built on the amazing work of the [Arch Linux community](https://archlinux.org).
 Install Files look beautiful from the wonderful tool: [GUM](https://github.com/charmbracelet/gum?tab=readme-ov-file)
 
-
+---
