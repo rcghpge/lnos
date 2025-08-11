@@ -67,7 +67,7 @@ docker-compose.override.yml
 coverage/
 .coverage
 .pytest_cache/
-*.bak
+
 
 # GPG private keys (security) - but allow public keys in keys/ directory
 .gnupg/
@@ -83,3 +83,8 @@ private-keys/
 lnos-*.iso
 archlinux-*.iso
 custom-*.iso docs/arm-image-expansion.md
+
+# LnOS Internal Development
+windows/
+.gnupg/
+*.bak
