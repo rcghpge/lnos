@@ -83,8 +83,7 @@ lnos-*.iso
 archlinux-*.iso
 custom-*.iso docs/arm-image-expansion.md
 
-# Sandbox branch (LnOS Development)
+# LnOS Internal Development
 windows/
 .gnupg/
 *.bak
-

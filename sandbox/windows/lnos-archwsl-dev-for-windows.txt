@@ -1,0 +1,16 @@
+LnOS for Windows Dev
+
+# LnOS at command line (Arch Linux):
+- sudo requires workarounds example: echo "nameserver 1.1.1.1" | sudo tee /etc/resolv.conf > /dev/null
+- no default text editor set in place for base system configs
+
+# Launching LnOS from PowerShell Windows 10 QEMU VM:
+- missing alot of firmware and firmware modules consolefont, ast, etc
+- `archiso/airootfs/etc/mkinitcpio.conf` needs refactoring/patching for this for Windows 10/11
+
+
+# Internet/WiFi Networking After Install:
+- has issues install pacman packages. detects pacman packages, but cannot resolve host [error]
+- missing `/etc/resolv.conf`
+- no `dhcpcd` for network configs
+- checks needed: `systemd-networkd`, `dhclient` 

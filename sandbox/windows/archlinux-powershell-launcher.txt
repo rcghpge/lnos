@@ -1,0 +1,35 @@
+& "C:\Program Files\qemu\qemu-system-x86_64.exe" --% -accel tcg -m 4096 -smp 4 -cpu max -drive file=C:\Users\rcock\Desktop\arch.qcow2,format=qcow2 -cdrom C:\Users\rcock\Desktop\archlinux-2025.07.01-x86_64.iso -boot d -drive file=C:\Progra~1\qemu\bios\fedora\usr\share\edk2\ovmf\OVMF_CODE.fd,if=pflash,format=raw,unit=0,readonly=on -drive file=C:\Progra~1\qemu\bios\fedora\usr\share\edk2\ovmf\OVMF_VARS.fd,if=pflash,format=raw,unit=1 -netdev user,id=net0 -device e1000,netdev=net0
+
+
+& "C:\Program Files\qemu\qemu-system-x86_64.exe" --% -accel tcg -m 4096 -smp 4 -cpu max -drive file=C:\Users\rcock\Desktop\arch.qcow2,format=qcow2 -cdrom C:\Users\rcock\Desktop\archlinux-2025.07.01-x86_64.iso -boot d -drive file=C:\Progra~1\qemu\bios\fedora\usr\share\edk2\ovmf\OVMF_CODE.fd,if=pflash,format=raw,unit=0,readonly=on -drive file=C:\Progra~1\qemu\bios\fedora\usr\share\edk2\ovmf\OVMF_VARS.fd,if=pflash,format=raw,unit=1 -netdev user,id=net0 -device e1000,netdev=net0
+
+# Create .qcow2 (VHD) for LnOS (PowerShell + Windows) - they're called QEMU Harddisks
+& "C:\Program Files\qemu\qemu-img.exe" create -f qcow2 C:\Users\rcock\Desktop\lnos-test.qcow2 20G
+
+# Launches ISO (with VHD)
+Start-Process "C:\Program Files\qemu\qemu-system-x86_64.exe" `
+  -ArgumentList @(
+    "-accel", "tcg",
+    "-m", "4096",
+    "-smp", "4",
+    "-cpu", "max",
+    "-cdrom", "C:\Users\rcock\Desktop\lnos-2025.08.07-x86_64.iso",
+    "-boot", "once=d",
+    "-drive", "file=C:\Users\rcock\Desktop\lnos-test.qcow2,format=qcow2",
+    "-vga", "std",
+    "-serial", "mon:stdio"
+  )
+
+# Launches ISO (no drive - no VHD)
+Start-Process "C:\Program Files\qemu\qemu-system-x86_64.exe" `
+  -ArgumentList @(
+    "-accel", "tcg",
+    "-m", "2048",
+    "-smp", "2",
+    "-cpu", "max",
+    "-cdrom", "C:\Users\rcock\Desktop\lnos-2025.08.07-x86_64.iso",
+    "-boot", "d",
+    "-vga", "std",
+    "-serial", "mon:stdio"
+  )
+
