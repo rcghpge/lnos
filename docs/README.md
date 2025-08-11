@@ -1,32 +1,24 @@
-# lnos
+<center><img src="https://github.com/uta-lug-nuts/LnOS/blob/main/docs/images/Tux_with_toolbox.png?raw=true" width=50% alt="tux with toolbox"></center>
 
 [![CodeQL](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql)
 [![LnOS CI/CD](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml)
 
-### LnOS — Arch Configured. Built at UT.
+![GPG Signed](https://img.shields.io/badge/GPG-Signed-brightgreen?style=for-the-badge&logo=gnupg)
+![Security Verified](https://img.shields.io/badge/Security-Verified-blue?style=for-the-badge&logo=shield)
+![Integrity Guaranteed](https://img.shields.io/badge/Integrity-Guaranteed-orange?style=for-the-badge&logo=checkmarx)
+![Build Status](https://img.shields.io/github/actions/workflow/status/bakkertj/LnOS/build-iso.yml?style=for-the-badge&logo=github)
+![Latest Release](https://img.shields.io/github/v/release/bakkertj/LnOS?style=for-the-badge&logo=github)
 
-> *"A UTA flavored distro with all the applications and tools the different engineering majors use."*  
-> — Professor Bakker
+**🔒 All releases are cryptographically signed for authenticity and integrity**
 
+"A UTA flavored distro with all the applications and tools the different engineering majors use" - Professor Bakker
 
-<br>
-<div align="center">
-  <img src="https://github.com/rcghpge/lnos/blob/main/docs/images/Tux_with_toolbox.png?raw=true" width="50%" alt="Tux with toolbox">
-</div>
-<br>
+## Overview
+The-LN-Project is a custom Linux distribution based on Arch Linux, designed specifically for University of Texas at Arlington (UTA) students. It aims to provide a lightweight, flexible, and powerful environment tailored to the needs of engineering students.The distro supports both x86_64 and ARM architectures (e.g., Raspberry Pi), ensuring compatibility with a wide range of student hardware.
 
----
+* First focused discipline is Computer Science (CS). 
 
-### Overview
-> ℹ️ Note:
-> This is a sandbox club build of Ln OS source tree. It's an early-stage build for building and testing new features and workflows.
-> For source tree check out the latest build here: [Ln OS](https://github.com/uta-lug-nuts/LnOS.git)
-
-The LN Project is a Linux distribution based on Arch Linux, originally designed for University of Texas at Arlington (UTA) students. It aims to provide a lightweight, flexible, and powerful environment tailored to the needs of engineering students. The distro supports both x86_64 and ARM architectures (e.g., Raspberry Pi), ensuring compatibility with a wide range of student hardware.
-
-* First focus discipline is Computer Science (CS). 
-
-### Goals 
+## Goals 
 
 * Lightweight and minimal base, built from Arch Linux.
 * Pre-configured tools for CS students, with plans to expand to other engineering disciplines (e.g., EE).
@@ -59,30 +51,6 @@ Click here to see guide on testing: [Testing](testing.md)
   * To learn more about Tiling Window Managers [click here](tilingWM.md)
 * Documentation: Guides and support for UTA students on installation and customization of tools.
 
----
-
-### Installation Instructions for Source Tree and Sandbox Club Development
-
-The installation below mirrors source tree for official releases. For this version with sandbox development:
-```bash
-# Clone the GitHub repository
-git clone --origin origin --no-single-branch https://github.com/rcghpge/lnos.git
-cd lnos
-
-# List all remote branches
-git branch -r
-
-# Checkout your desired branch locally
-git checkout -b sandbox origin/sandbox   # or merge, pr, etc.
-```
-
-If you're installing the official release or building from source tree start below at custom ISO installation for standard setup steps, including ISO flashing and installation from stable source tree builds.
-
-### Custom ISO Installation
-
-Pre-built Ln OS ISOs are available with the installer included.
-
-#### Option 1: Download Pre-built ISO (source tree ISO)
 
 ## Installation Instructions
 
@@ -244,7 +212,6 @@ All LnOS releases are digitally signed with GPG to ensure authenticity and integ
 * Limited testing on various hardware configurations
 * Some desktop environments may require additional configuration 
 
----
 
 ## Credits
 
