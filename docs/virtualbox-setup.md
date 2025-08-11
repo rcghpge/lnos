@@ -13,7 +13,7 @@ You'll need some essential packages because we're on the linux-hardened kernel
 
 ```bash
 # virtualbox host headers (we use dkms cause we're on a custom kernel)
-sudo virtualbox-host-dkms
+sudo pacman -S virtualbox-host-dkms
 # the vm
 sudo pacman -S virtualbox
 # linux-hardened kernel headers
