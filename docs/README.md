@@ -1,5 +1,3 @@
-# lnos
-
 ### LnOS @ Sandbox — Arch Configured. Built at UT.
 
 > *"A UTA flavored distro with all the applications and tools the different engineering majors use."*  
