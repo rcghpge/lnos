@@ -1,21 +1,27 @@
 # lnos
 
-[![Sandbox](https://github.com/rcghpge/lnos/actions/workflows/ci-sandbox.yml/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/ci-sandbox.yml)
-[![ShellCheck](https://github.com/rcghpge/lnos/actions/workflows/lint.yml/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/lint.yml)
-[![CodeQL](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql)
-[![LnOS CI/CD](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml)
-
 ### LnOS @ Sandbox — Arch Configured. Built at UT.
 
 > *"A UTA flavored distro with all the applications and tools the different engineering majors use."*  
 > — Professor Bakker
-
 
 <br>
 <div align="center">
   <img src="https://github.com/rcghpge/lnos/blob/main/docs/images/Tux_with_toolbox.png?raw=true" width="50%" alt="Tux with toolbox">
 </div>
 <br>
+
+[![Sandbox](https://github.com/rcghpge/lnos/actions/workflows/ci-sandbox.yml/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/ci-sandbox.yml)
+[![ShellCheck](https://github.com/rcghpge/lnos/actions/workflows/lint.yml/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/lint.yml)
+[![CodeQL](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/github-code-scanning/codeql)
+[![LnOS CI/CD](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml/badge.svg)](https://github.com/rcghpge/lnos/actions/workflows/ci-main.yml)
+![GPG Signed](https://img.shields.io/badge/GPG-Signed-brightgreen?style=for-the-badge&logo=gnupg)
+![Security Verified](https://img.shields.io/badge/Security-Verified-blue?style=for-the-badge&logo=shield)
+![Integrity Guaranteed](https://img.shields.io/badge/Integrity-Guaranteed-orange?style=for-the-badge&logo=checkmarx)
+![Build Status](https://img.shields.io/github/actions/workflow/status/bakkertj/LnOS/build-iso.yml?style=for-the-badge&logo=github)
+![Latest Release](https://img.shields.io/github/v/release/bakkertj/LnOS?style=for-the-badge&logo=github)
+
+**🔒 All releases are cryptographically signed for authenticity and integrity**
 
 ---
 
@@ -61,7 +67,6 @@ Click here to see guide on testing: [Testing](testing.md)
   * To learn more about Tiling Window Managers [click here](tilingWM.md)
 * Documentation: Guides and support for UTA students on installation and customization of tools.
 
----
 
 ### Installation Instructions for Source Tree and Sandbox Club Development
 
@@ -75,18 +80,10 @@ cd lnos
 git branch -r
 
 # Checkout your desired branch locally
-git checkout -b sandbox origin/sandbox   # or merge, pr, etc.
+git checkout -b sandbox origin/sandbox   # or merge, stable, etc.
 ```
 
 If you're installing the official release or building from source tree start below at custom ISO installation for standard setup steps, including ISO flashing and installation from stable source tree builds.
-
-### Custom ISO Installation
-
-Pre-built Ln OS ISOs are available with the installer included.
-
-#### Option 1: Download Pre-built ISO (source tree ISO)
-
-## Installation Instructions
 
 ### Custom ISO Installation
 
@@ -246,7 +243,6 @@ All LnOS releases are digitally signed with GPG to ensure authenticity and integ
 * Limited testing on various hardware configurations
 * Some desktop environments may require additional configuration 
 
----
 
 ## Credits
 
@@ -255,4 +251,4 @@ Inspired by Professor Bakker’s and UTA LUGNUTS Community of a vision for a UTA
 Built on the amazing work of the [Arch Linux community](https://archlinux.org).
 Install Files look beautiful from the wonderful tool: [GUM](https://github.com/charmbracelet/gum?tab=readme-ov-file)
 
-
+---
