@@ -235,7 +235,7 @@ jobs:
               chown -R $HOST_UID:$HOST_GID /workspace/out || true
             '
 
-      - name: Rename & checksum ARM images (minimal + full)
+      - name: Run checksum for Sandbox ARM images (minimal + full)
         run: |
           set -euo pipefail
           mkdir -p out
