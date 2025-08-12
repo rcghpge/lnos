@@ -235,14 +235,26 @@ jobs:
               chown -R $HOST_UID:$HOST_GID /workspace/out || true
             '
 
-      - name: Run checksum for Sandbox ARM images
-        if: ${{ inputs.kind == 'sdimg' || inputs.kind == 'both' || github.event_name != 'workflow_dispatch' }}
+      - name: Rename & checksum ARM images (minimal + full)
         run: |
           set -euo pipefail
           mkdir -p out
           shopt -s nullglob
           touched=false
+
+          # Minimal images
+          for IMG in out/*minimal*.img out/*minimal*.img.xz; do
+            [ -f "$IMG" ] || continue
+            EXT="${IMG##*.}"
+            BASE="lnos-${{ steps.ver.outputs.VERSION }}-aarch64-minimal-sandbox.${EXT}"
+            mv "$IMG" "out/$BASE"
+            sha256sum "out/$BASE" | tee -a out/SHA256SUMS
+            touched=true
+          done
+
+          # Full images
           for IMG in out/*.img out/*.img.xz; do
+            [[ "$IMG" == *minimal* ]] && continue
             [ -f "$IMG" ] || continue
             EXT="${IMG##*.}"
             BASE="lnos-${{ steps.ver.outputs.VERSION }}-aarch64-sandbox.${EXT}"
@@ -250,6 +262,7 @@ jobs:
             sha256sum "out/$BASE" | tee -a out/SHA256SUMS
             touched=true
           done
+
           if [[ "$touched" == "false" ]]; then
             echo "ℹ️ No ARM images found to rename/checksum."
           fi
