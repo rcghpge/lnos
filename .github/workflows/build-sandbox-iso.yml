@@ -55,7 +55,7 @@ concurrency:
 jobs:
   build-x86_64:
     # Push/Tag: run as before. Manual: only if arch is x86_64 or both.
-    if: ${{ (github.event_name != 'workflow_dispatch' && (startsWith(github.ref, 'refs/tags/sandbox-') || github.ref == 'refs/heads/sandbox')))
+    if: ${{ (github.event_name != 'workflow_dispatch' && (startsWith(github.ref, 'refs/tags/sandbox-') || github.ref == 'refs/heads/sandbox')) 
           || (github.event_name == 'workflow_dispatch' && (inputs.arch == 'x86_64' || inputs.arch == 'both')) }}
     runs-on: ubuntu-latest
 
@@ -169,7 +169,7 @@ jobs:
 
   build-aarch64:
     # Push/Tag: run as before. Manual: only if arch is aarch64 or both.
-    if: ${{ (github.event_name != 'workflow_dispatch' && (startsWith(github.ref, 'refs/tags/sandbox-') || github.ref == 'refs/heads/sandbox')))
+    if: ${{ (github.event_name != 'workflow_dispatch' && (startsWith(github.ref, 'refs/tags/sandbox-') || github.ref == 'refs/heads/sandbox')) 
           || (github.event_name == 'workflow_dispatch' && (inputs.arch == 'aarch64' || inputs.arch == 'both')) }}
     runs-on: ubuntu-latest
 
@@ -177,7 +177,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Resolve version
+      - name: Resolve versioning
         id: ver
         run: |
           if [[ -n "${INPUT_VERSION}" ]]; then
@@ -299,7 +299,7 @@ jobs:
   create-release:
     needs: [build-x86_64, build-aarch64]
     # Push/Tag: run as before. Manual: only if 'make_release' checked.
-    if: ${{ (github.event_name != 'workflow_dispatch' && (startsWith(github.ref, 'refs/tags/sandbox-') || github.ref == 'refs/heads/sandbox')))
+    if: ${{ (github.event_name != 'workflow_dispatch' && (startsWith(github.ref, 'refs/tags/sandbox-') || github.ref == 'refs/heads/sandbox')) 
           || (github.event_name == 'workflow_dispatch' && inputs.make_release) }}
     runs-on: ubuntu-latest
 
@@ -341,14 +341,14 @@ jobs:
       - name: Final artifact listing
         run: find ./release-assets -type f -ls || true
 
-      - name: Generate GitHub Pre‑Release with Sandbox Assets
+      - name: Create GitHub Pre‑Release with Sandbox Assets
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.ver.outputs.TAG_NAME }}
           name: LnOS Sandbox Pre‑Release ${{ steps.ver.outputs.TAG_NAME }}
           prerelease: true
           body: |
-            🚧 **Sandbox Build** for testing & preview for feature engineering
+            🚧 **Sandbox Build** for testing & preview for feature engineering 
             This release contains ISO/IMGs from the sandbox branch for building and testing new features for core, extra, and extensions of LnOS following in line with Arch Linux principles.
 
             Artifacts:
@@ -366,3 +366,4 @@ jobs:
             ./release-assets/SHA256SUMS
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
