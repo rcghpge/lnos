@@ -1,4 +1,7 @@
-# Merge branch dev
+# YAML workflows
 .github/workflows/ci-main.yml merge=ours
 .github/workflows/ci-sandbox.yml merge=ours
 .github/workflows/ci-merge.yml merge=ours
+
+# SCM syntax highlighting & preventing 3-way merges
+pixi.lock merge=binary linguist-language=YAML linguist-generated=true

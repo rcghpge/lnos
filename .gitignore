@@ -88,3 +88,5 @@ custom-*.iso docs/arm-image-expansion.md
 windows/
 .gnupg/
 *.bak
+.pixi/*
+!.pixi/config.toml
