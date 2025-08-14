@@ -14,12 +14,17 @@ bootmodes=('bios.syslinux.mbr' 'bios.syslinux.eltorito'
 arch="x86_64"
 pacman_conf="pacman.conf"
 airootfs_image_type="squashfs"
-airootfs_image_tool_options=('-comp' 'xz' '-Xdict-size' '75%' '-b' '1M')
+mkinitcpio_conf="mkinitcpio.conf"
+_threads=$(nproc 2>/dev/null || echo 1)
+(( _threads < 1 )) && _threads=1
+airootfs_image_tool_options=(-comp zstd -Xcompression-level 12 -processors "$_threads" -no-xattrs)
 file_permissions=(
   ["/root"]="0:0:750"
   ["/root/.bashrc"]="0:0:644"
   ["/root/.profile"]="0:0:644"
   ["/etc/bash.bashrc"]="0:0:644"
+  ["/etc/fstab"]="0:0:0644"
+  ["/usr/local/sbin/lnos-merge-pacnew"]="0:0:755"
   ["/usr/local/bin/LnOS-installer.sh"]="0:0:755"
   ["/usr/local/bin/lnos-autostart.sh"]="0:0:755"
   ["/usr/local/bin/lnos-shell.sh"]="0:0:755"
@@ -32,3 +37,34 @@ file_permissions=(
   ["/autorun.inf"]="0:0:644"
   ["/README.txt"]="0:0:644"
 )
+
+# --- Post-build checks ---
+post_build() {
+  # Check ISO staging for the final ISO tree
+  local iso_root="${work_dir}/iso/${install_dir}"
+
+  # BIOS: Syslinux menu
+  if [[ -f "${iso_root}/boot/syslinux/syslinux.cfg" ]]; then
+    sed -i \
+      -e "s|%INSTALL_DIR%|${install_dir}|g" \
+      -e "s|%ARCHISO_LABEL%|${iso_label}|g" \
+      "${iso_root}/boot/syslinux/syslinux.cfg"
+  fi
+
+  # UEFI: GRUB 
+  if [[ -f "${iso_root}/boot/grub/grub.cfg" ]]; then
+    sed -i \
+      -e "s|%INSTALL_DIR%|${install_dir}|g" \
+      -e "s|%ARCHISO_LABEL%|${iso_label}|g" \
+      "${iso_root}/boot/grub/grub.cfg"
+  fi
+
+  # Check boot entries (e.g., systemd‑boot loader entries)
+  if [[ -d "${iso_root}/boot/loader/entries" ]]; then
+    find "${iso_root}/boot/loader/entries" -type f -name '*.conf' -print0 \
+      | xargs -0 -r sed -i \
+        -e "s|%INSTALL_DIR%|${install_dir}|g" \
+        -e "s|%ARCHISO_LABEL%|${iso_label}|g"
+  fi
+}
+

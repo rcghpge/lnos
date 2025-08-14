@@ -1,6 +1,7 @@
 # Network installer with ARM64 virtualization compatibility
 # Core system
 base
+systemd
 linux-aarch64
 linux-firmware
 

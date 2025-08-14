@@ -1,0 +1,7 @@
+# LnOS Live ISO — generic fstab for all x86_64 targets.
+# Root (/) is mounted by the archiso initramfs (SquashFS + overlay).
+# Do NOT add a "/" entry here.
+
+# Temporary files
+tmpfs   /tmp    tmpfs   mode=1777,nosuid,nodev   0  0
+

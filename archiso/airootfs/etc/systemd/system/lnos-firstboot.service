@@ -1,0 +1,15 @@
+# archiso/airootfs/etc/systemd/system/lnos-firstboot.service
+[Unit]
+Description=LnOS First Boot Tasks
+After=multi-user.target
+ConditionPathExists=!/run/lnos-firstboot.done
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/lnos-autostart.sh
+ExecStartPost=/usr/bin/touch /run/lnos-firstboot.done
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+
