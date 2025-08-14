@@ -3,6 +3,14 @@
 # Debug: Log that customize script is running
 echo "LnOS customize script starting at $(date)" > /tmp/customize-debug.log
 
+# Configs for mkinitcpio.conf to include virtio and overlay modules (Arch Linux support for Windows)
+sed -i 's/^MODULES=.*/MODULES=(loop dm_snapshot overlay virtio virtio_blk virtio_pci virtio_scsi virtio_net virtio_rng)/' /etc/mkinitcpio.conf
+
+# Ensure archiso hooks are present if mkinitcpio.conf got replaced (TODO: check HOOKS configs)
+if ! grep -q 'archiso' /etc/mkinitcpio.conf; then
+  sed -i 's/^HOOKS=.*/HOOKS=(base udev modconf kms keyboard keymap consolefont block filesystems fsck archiso archiso_loop_mnt archiso_pxe_common archiso_pxe_nbd archiso_pxe_http archiso_pxe_nfs)/' /etc/mkinitcpio.conf
+fi
+
 # Set root password to 'lnos' for the live environment
 echo 'root:lnos' | chpasswd
 
