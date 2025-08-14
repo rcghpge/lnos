@@ -55,14 +55,14 @@ mkdir -p "$OUTPUT_DIR"
 # Update profiledef.sh for the target architecture
 sed -i "s/^arch=.*/arch=\"$ARCH\"/" "$PROFILE_DIR/profiledef.sh"
 
-# Copy the appropriate packages file for archiso (it expects packages.x86_64)
-if [[ "$ARCH" == "aarch64" ]] && [[ -f "$PROFILE_DIR/packages.aarch64" ]]; then
-    cp "$PROFILE_DIR/packages.aarch64" "$PROFILE_DIR/packages.x86_64"
-    print_status "Using packages.aarch64 for aarch64 build"
-elif [[ "$ARCH" == "x86_64" ]] && [[ -f "$PROFILE_DIR/packages.x86_64" ]]; then
-    print_status "Using packages.x86_64 for x86_64 build"
-else
-    print_warning "packages.$ARCH not found, using existing packages.x86_64"
+# Validate builds:
+if [[ "$ARCH" == "aarch64" && ! -f "$PROFILE_DIR/packages.aarch64" ]]; then
+  print_error "Missing $PROFILE_DIR/packages.aarch64"
+  exit 1
+fi
+if [[ "$ARCH" == "x86_64" && ! -f "$PROFILE_DIR/packages.x86_64" ]]; then
+  print_error "Missing $PROFILE_DIR/packages.x86_64"
+  exit 1
 fi
 
 # Ensure our custom mirrorlist is used during the build

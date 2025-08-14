@@ -1,0 +1,12 @@
+[Trigger]
+Type = Package
+Operation = Install
+Operation = Upgrade
+Target = linux*
+Target = mkinitcpio
+
+[Action]
+Description = Skipping mkinitcpio in ISO build
+When = PostTransaction
+Exec = /usr/bin/true
+

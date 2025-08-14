@@ -1,112 +1,110 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# LnOS customize_airootfs.sh — chroot-safe, idempotent, no kernel work here
+set -euo pipefail
 
-# Debug: Log that customize script is running
-echo "LnOS customize script starting at $(date)" > /tmp/customize-debug.log
+log() { printf '[LnOS] %s\n' "$*" >&2; }
 
-# Configs for mkinitcpio.conf to include virtio and overlay modules (Arch Linux support for Windows)
-sed -i 's/^MODULES=.*/MODULES=(loop dm_snapshot overlay virtio virtio_blk virtio_pci virtio_scsi virtio_net virtio_rng)/' /etc/mkinitcpio.conf
+# --- Utilities ----------------------------------------------------------------
+safe_install() {
+  # safe_install <mode> <src> <dst>
+  local mode="$1" src="$2" dst="$3"
+  if [[ -e "$src" && -e "$dst" ]] && [[ "$(realpath -m "$src")" == "$(realpath -m "$dst")" ]]; then
+    log "skip: '$src' == '$dst'"; return 0
+  fi
+  if [[ -f "$src" && -f "$dst" ]] && cmp -s "$src" "$dst"; then
+    log "unchanged: $dst"; return 0
+  fi
+  install -Dm"$mode" "$src" "$dst"
+  log "installed: $dst"
+}
 
-# Ensure archiso hooks are present if mkinitcpio.conf got replaced (TODO: check HOOKS configs)
-if ! grep -q 'archiso' /etc/mkinitcpio.conf; then
-  sed -i 's/^HOOKS=.*/HOOKS=(base udev modconf kms keyboard keymap consolefont block filesystems fsck archiso archiso_loop_mnt archiso_pxe_common archiso_pxe_nbd archiso_pxe_http archiso_pxe_nfs)/' /etc/mkinitcpio.conf
-fi
+safe_write() {
+  # safe_write <mode> <dst> <<<'content'
+  local mode="$1" dst="$2" tmp
+  tmp="$(mktemp)"
+  cat > "$tmp"
+  if [[ -f "$dst" ]] && cmp -s "$tmp" "$dst"; then
+    rm -f "$tmp"; log "unchanged: $dst"; return 0
+  fi
+  install -Dm"$mode" "$tmp" "$dst"
+  rm -f "$tmp"
+  log "wrote: $dst"
+}
 
-# Set root password to 'lnos' for the live environment
-echo 'root:lnos' | chpasswd
+# --- Installing packages or running mkinitcpio here is not recommended --------------------------
+# Packages must be declared in archiso/packages.x86_64
+# mkarchiso will build kernel+initramfs in its own stage.
 
-# Set timezone to UTC to prevent prompts
-ln -sf /usr/share/zoneinfo/UTC /etc/localtime
-
-# Configure pacman repositories and keyring
-echo "Configuring pacman repositories..."
-pacman-key --init
-pacman-key --populate archlinux
-
-# Force replace the mirrorlist with our reliable one
-echo "Replacing mirrorlist with reliable mirrors..."
-cat > /etc/pacman.d/mirrorlist << 'EOF'
-# Arch Linux mirrorlist for LnOS ISO
-# Using mirrors that support core and extra repositories
-
+# --- Mirrorlist (optional minimal set) ----------------------------------------
+safe_write 0644 /etc/pacman.d/mirrorlist <<'EOF'
+## LnOS ISO mirrorlist (minimal, reliable set)
 Server = https://geo.mirror.pkgbuild.com/$repo/os/$arch
 Server = https://mirror.rackspace.com/archlinux/$repo/os/$arch
 Server = https://mirror.leaseweb.net/archlinux/$repo/os/$arch
 EOF
 
-# Update package databases
-echo "Updating package databases..."
-pacman -Syy --noconfirm
-
-# Test repository connectivity
-echo "Testing repository connectivity..."
-if ! pacman -Sy --noconfirm >/dev/null 2>&1; then
-    echo "WARNING: Repository test failed, will retry during runtime..."
-fi
-
-# Enable services for the live environment
-systemctl enable NetworkManager
-systemctl enable dhcpcd
-systemctl enable systemd-resolved
-
-# Set up automatic login for root with autostart
-mkdir -p /etc/systemd/system/getty@tty1.service.d
-cat > /etc/systemd/system/getty@tty1.service.d/autologin.conf << EOF
-[Service]
-ExecStart=
-ExecStart=-/sbin/agetty -o '-p -f -- \\u' --noclear --autologin root %I \$TERM
+# --- mkinitcpio.conf for LIVE environment (no mkinitcpio invocation) ----------
+# Keep archiso hooks; mkarchiso will use this when it builds the image.
+safe_write 0644 /etc/mkinitcpio.conf <<'EOF'
+MODULES=(loop dm_snapshot overlay squashfs virtio virtio_blk virtio_pci virtio_scsi virtio_net)
+BINARIES=()
+FILES=()
+HOOKS=(base udev archiso archiso_loop_mnt block filesystems keyboard fsck)
+COMPRESSION="zstd"
 EOF
 
-# Also set the default shell for root to our LnOS shell
-chsh -s /usr/local/bin/lnos-shell.sh root
+# Ensure we don't ship any mkinitcpio pacman hook that would auto-run mkinitcpio
+rm -f /etc/pacman.d/hooks/90-mkinitcpio.hook 2>/dev/null || true
 
-# Copy the LnOS installer to root's home directory
-mkdir -p /root/LnOS/scripts
-cp /usr/local/bin/LnOS-installer.sh /root/LnOS/scripts/
+# --- System services (enable without installing packages here) ----------------
+mkdir -p /etc/systemd/system/multi-user.target.wants
+for svc in NetworkManager.service dhcpcd.service systemd-resolved.service; do
+  ln -sf "/usr/lib/systemd/system/$svc" "/etc/systemd/system/multi-user.target.wants/$svc"
+done
 
-# Copy pacman packages if they exist
-if [[ -d "/usr/share/lnos/pacman_packages" ]]; then
-    cp -r /usr/share/lnos/pacman_packages /root/LnOS/scripts/
-else
-    echo "WARNING: /usr/share/lnos/pacman_packages not found, creating empty directory"
-    mkdir -p /root/LnOS/scripts/pacman_packages
-fi
+# Symlink fallback
+mkdir -p /etc/systemd/system/multi-user.target.wants
+for svc in NetworkManager.service dhcpcd.service systemd-resolved.service; do
+  ln -sf "/usr/lib/systemd/system/$svc" "/etc/systemd/system/multi-user.target.wants/$svc"
+done
 
-# Make installer executable
-chmod +x /root/LnOS/scripts/LnOS-installer.sh
+# Autologin on tty1
+mkdir -p /etc/systemd/system/getty@tty1.service.d
+safe_write 0644 /etc/systemd/system/getty@tty1.service.d/autologin.conf <<'EOF'
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty -o '-p -f -- \u' --noclear --autologin root %I $TERM
+EOF
 
-# Create a marker file to show the customize script completed
-echo "Customize script completed at $(date)" > /tmp/customize-completed
-echo "Customize script completed successfully" >> /tmp/customize-debug.log
-
-# Create a systemd service for auto-starting the installer
-echo "Creating systemd service..." >> /tmp/customize-debug.log
-cat > /etc/systemd/system/lnos-autostart.service << 'EOF'
+# Autostart service
+safe_write 0644 /etc/systemd/system/lnos-autostart.service <<'EOF'
 [Unit]
 Description=LnOS Auto-start Installer
-After=network-online.target
-Wants=network-online.target
+After=getty@tty1.service
 ConditionPathExists=/usr/local/bin/lnos-autostart.sh
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/lnos-autostart.sh
-StandardInput=tty
-StandardOutput=tty
-StandardError=tty
 TTYPath=/dev/tty1
-TTYReset=yes
-TTYVHangup=yes
-RemainAfterExit=yes
+ExecStart=/usr/local/bin/lnos-autostart.sh
 
 [Install]
 WantedBy=multi-user.target
 EOF
+ln -sf /usr/lib/systemd/system/lnos-autostart.service \
+       /etc/systemd/system/multi-user.target.wants/lnos-autostart.service || true
 
-# Disable systemd services since they don't work well with terminal output
-echo "Disabling systemd services for terminal output..." >> /tmp/customize-debug.log
-systemctl disable lnos-autostart.service 2>/dev/null || true
-systemctl disable lnos-boot.service 2>/dev/null || true
-echo "Systemd services disabled, using shell-based method" >> /tmp/customize-debug.log
+# --- Shell helpers -----------------------------------------
+for bin in /usr/local/bin/lnos-shell.sh /usr/local/bin/LnOS-installer.sh /usr/local/bin/lnos-autostart.sh; do
+  [[ -f "$bin" ]] && chmod 0755 "$bin" && log "chmod +x $bin"
+done
+if [[ -x /usr/local/bin/lnos-shell.sh ]]; then
+  grep -qxF '/usr/local/bin/lnos-shell.sh' /etc/shells || echo '/usr/local/bin/lnos-shell.sh' >> /etc/shells
+fi
 
-# Note: Using shell-based autostart approach, not bashrc
-echo "Using shell-based autostart approach" >> /tmp/customize-debug.log
+# Optional live root password and timezone
+echo 'root:lnos' | chpasswd || true
+ln -sf /usr/share/zoneinfo/UTC /etc/localtime
+
+log "Customize complete."
+

@@ -1,10 +1,10 @@
 # Network installer with VirtualBox compatibility
 # Core system
 base
+systemd
 linux-hardened
 linux-firmware
-xf86-video-fbdev
-xf86-video-vesa
+pacman-contrib
 
 # Filesystem support (critical for VirtualBox)
 btrfs-progs
@@ -12,15 +12,21 @@ dosfstools
 e2fsprogs
 ntfs-3g
 xfsprogs
+xdg-user-dirs
 
 # Hardware and virtualization support
 virtualbox-guest-utils-nox
 open-vm-tools
+xf86-video-fbdev
+xf86-video-vesa
 
 # Boot and hardware
 syslinux
 efibootmgr
 grub
+intel-ucode
+amd-ucode
+
 
 # Block device utilities
 util-linux
@@ -44,6 +50,7 @@ dialog
 arch-install-scripts
 parted
 gdisk
+zstd
 
 # Essential utilities
 sudo
@@ -66,6 +73,11 @@ mtools
 # Additional initramfs support
 linux-atm
 ppp
+pv
 
 # Your installer requirements
 gum
+
+# UI/UX settings
+terminus-font
+

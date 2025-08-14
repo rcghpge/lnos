@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+LOGDIR=/var/log/lnos-pacnew
+mkdir -p "$LOGDIR"
+
+shopt -s nullglob
+mapfile -t pacnews < <(find /etc -type f -name '*.pacnew' -print0 | xargs -0 -r -I{} echo {})
+shopt -u nullglob
+
+# policy: "ours-first" with audit, auto-accept trivial upstream changes
+for new in "${pacnews[@]}"; do
+  orig="${new%.pacnew}"
+
+  # Save a unified diff for review
+  rel="${orig#/}"
+  mkdir -p "$LOGDIR/$(dirname "$rel")"
+  if command -v colordiff >/dev/null 2>&1; then
+    colordiff -u --label "$orig" "$orig" --label "$new" "$new" > "$LOGDIR/$rel.diff" || true
+  else
+    diff -u --label "$orig" "$orig" --label "$new" "$new" > "$LOGDIR/$rel.diff" || true
+  fi
+
+  # 1) If differences are only comments/blank lines, keep ours and drop .pacnew
+  if diff -q -I '^\s*#' -I '^\s*$' "$orig" "$new" >/dev/null 2>&1; then
+    rm -f "$new"
+    echo "[lnos-merge] Kept ours (comment-only changes): $orig" | tee -a "$LOGDIR/actions.log"
+    continue
+  fi
+
+  # 2) If our file has an explicit LN block, append upstream changes beneath it
+  if grep -q 'BEGIN LN CUSTOM' "$orig" && grep -q 'END LN CUSTOM' "$orig"; then
+    cp -a "$orig" "$orig.bak.lnos"
+    {
+      echo ""
+      echo "# ----- LN OS: Upstream package changes from $(date) -----"
+      sed 's/^/# upstream: /' "$new"
+    } >> "$orig"
+    rm -f "$new"
+    echo "[lnos-merge] Kept ours + appended upstream as commented block: $orig" | tee -a "$LOGDIR/actions.log"
+    continue
+  fi
+
+  # 3.) Default: keep ours, store upstream for manual review
+  mv -f "$new" "$orig.pacnew.lnos"
+  echo "[lnos-merge] Kept ours; saved upstream as $orig.pacnew.lnos" | tee -a "$LOGDIR/actions.log"
+done
+
+# Optional: list remaining pacnews (should be none)
+find /etc -type f -name '*.pacnew' -print | tee -a "$LOGDIR/remaining.log" || true
+
