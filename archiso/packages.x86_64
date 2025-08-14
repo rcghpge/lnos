@@ -1,7 +1,7 @@
 # Network installer with VirtualBox compatibility
 # Core system
 base
-linux
+linux-hardened
 linux-firmware
 xf86-video-fbdev
 xf86-video-vesa
