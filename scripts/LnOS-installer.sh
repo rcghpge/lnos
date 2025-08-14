@@ -127,7 +127,7 @@ setup_desktop_and_packages()
             wget https://raw.githubusercontent.com/JaKooLit/Arch-Hyprland/main/auto-install.sh
         
             ;;
-		"DWM(similar to Hyprland)")
+		"DWM(Similar to Hyprland)")
             gum_echo "Installing DWM..."
 			gum_echo "[WARNING] DWM requires more work in the future, for now this option doesn't do anything"
             #pacman -S --noconfirm uwsm
@@ -137,7 +137,7 @@ setup_desktop_and_packages()
 
     # Package Installation
     while true; do
-        THEME=$(gum choose --header "Choose your installation Profile:" "CSE" "Custom")
+        THEME=$(gum choose --header "Choose your installation profile:" "CSE" "Custom")
         gum confirm "You selected: $THEME. Proceed with installation?" && break
     done
 
