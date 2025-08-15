@@ -20,13 +20,29 @@ sed -i 's/^#ParallelDownloads.*/ParallelDownloads = 10/' /etc/pacman.conf
 # Force replace the mirrorlist with our reliable one
 echo "Replacing mirrorlist with reliable mirrors..."
 cat > /etc/pacman.d/mirrorlist << 'EOF'
+## LnOS club-approved tier-1 mirrors (core + extra only)
+Server = https://mirrors.kernel.org/archlinux/$repo/os/$arch
+Server = https://mirror.rackspace.com/archlinux/$repo/os/$arch
+Server = https://arch.mirror.constant.com/$repo/os/$arch
+Server = https://mirrors.lug.mtu.edu/archlinux/$repo/os/$arch
+EOF
+
+# ======================================================
 # Arch Linux mirrorlist for LnOS ISO
 # Using mirrors that support core and extra repositories
+# Remove all repos except core & extra from pacman.conf
+# ======================================================
 
-Server = https://geo.mirror.pkgbuild.com/$repo/os/$arch
-Server = https://mirror.rackspace.com/archlinux/$repo/os/$arch
-Server = https://mirror.leaseweb.net/archlinux/$repo/os/$arch
-EOF
+echo "Locking pacman to core + extra only..."
+sed -i '/^\[community\]/,/^Include/d' /etc/pacman.conf
+sed -i '/^\[multilib\]/,/^Include/d' /etc/pacman.conf
+sed -i '/^\[testing\]/,/^Include/d' /etc/pacman.conf
+sed -i '/^\[community-testing\]/,/^Include/d' /etc/pacman.conf
+sed -i '/^\[multilib-testing\]/,/^Include/d' /etc/pacman.conf
+
+# Ensure core and extra remain in the config
+grep -q '^\[core\]' /etc/pacman.conf || echo -e "\n[core]\nInclude = /etc/pacman.d/mirrorlist" >> /etc/pacman.conf
+grep -q '^\[extra\]' /etc/pacman.conf || echo -e "\n[extra]\nInclude = /etc/pacman.d/mirrorlist" >> /etc/pacman.conf
 
 # Update package databases
 echo "Updating package databases..."
