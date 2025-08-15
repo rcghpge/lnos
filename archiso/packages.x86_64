@@ -15,6 +15,10 @@ pv
 # Hardware and virtualization support
 virtualbox-guest-utils-nox
 open-vm-tools
+mesa
+libglvnd
+mesa-demos
+spice-vdagent
 
 # Boot and hardware
 syslinux
@@ -32,6 +36,7 @@ dhcpcd
 iw
 wget
 curl
+reflector
 
 # Installation tools
 arch-install-scripts
