@@ -540,6 +540,13 @@ install_x86_64() {
   gum_echo "Generating fstab (UUID)…"
   genfstab -U /mnt >> /mnt/etc/fstab
   cat /mnt/etc/fstab
+    # Copy current console font config to installed system
+    if [ -f /etc/vconsole.conf ]; then
+        install -Dm644 /etc/vconsole.conf /mnt/etc/vconsole.conf
+    fi
+
+	# Copy LnOS repository files to target system (in order for the spin to happen you have to startup a new bash instance)
+	gum spin --spinner dot --title "copying LnOS files" -- bash -c "$(declare -f copy_lnos_files); copy_lnos_files"
 
   if [ ! -s /mnt/etc/fstab ]; then
     echo "ERROR: fstab not generated!" >&2

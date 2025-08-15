@@ -17,8 +17,10 @@ pv
 # Hardware and virtualization support
 virtualbox-guest-utils-nox
 open-vm-tools
-xf86-video-fbdev
-xf86-video-vesa
+mesa
+libglvnd
+mesa-demos
+spice-vdagent
 
 # Boot and hardware
 syslinux
@@ -44,7 +46,7 @@ wireless_tools
 netctl
 wget
 curl
-dialog
+reflector
 
 # Installation tools
 arch-install-scripts
