@@ -203,7 +203,7 @@ setup_desktop_and_packages()
                 gum spin --spinner dot --title "Installing pacman packages..." -- pacman -S --noconfirm "$PACMAN_PACKAGES"
             fi
 
-            gum_echo "AUR (Arch User Repository) is less secure because it's not maintained by Arch. LnOS Maintainers picked these packages because their releases were signed with PGP keys"
+            gum_echo "AUR (Arch User Repository) is less secure because it's not maintained by Arch. LnOS Maintainers picked these packages because their releases are signed with PGP keys"
             gum confirm "Will you proceed to download AUR packages ? (i.e. brave, webcord)" || return
             
             # clone paru and build
