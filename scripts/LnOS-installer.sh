@@ -167,7 +167,7 @@ setup_desktop_and_packages()
                 --foreground 255 --border-foreground 130 --border double \
                 --width 100 --margin "1 2" --padding "2 4" \
                 'AUR (Arch User Repository) is less secure because its not maintained by Arch.' \
-                'LnOS Maintainers picked these packages because their releases were signed with PGP keys' \
+                'LnOS Maintainers picked these packages because their releases are signed with PGP keys' \
             gum confirm "Will you proceed to download AUR packages ? (i.e. brave, webcord)" || return
             
             # clone paru and build
