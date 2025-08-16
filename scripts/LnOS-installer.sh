@@ -90,8 +90,13 @@ setup_desktop_and_packages() {
   gum_echo "Installing developer tools and basics…"
   pacman -S --noconfirm base-devel git wget curl openssh networkmanager dhcpcd vi vim iw xdg-user-dirs
 
+<<<<<<< HEAD
   systemctl enable --now NetworkManager || true
   systemctl enable dhcpcd || true
+=======
+gum_echo "Connect to the internet? (Installer won't work without it)"
+gum confirm || exit
+>>>>>>> test
 
   local DE_CHOICE
   DE_CHOICE=$(gum choose --header "Choose your Desktop Environment (DE):" \
@@ -148,6 +153,7 @@ setup_desktop_and_packages() {
         gum_error "CSE_packages.txt not found in repo."
       fi
 
+<<<<<<< HEAD
       gum style --foreground 255 --border-foreground 130 --border double \
         --width 100 --margin "1 2" --padding "2 4" \
         'AUR is community-maintained. LnOS curates a few signed packages (e.g., brave, webcord).'
@@ -161,6 +167,177 @@ setup_desktop_and_packages() {
         if PARU_PACKAGES_PATH="$(repo_file paru_packages/paru_packages.txt)"; then
           PARU_PACKAGES="$(tr '\n' ' ' < "$PARU_PACKAGES_PATH")"
           [ -n "$PARU_PACKAGES" ] && paru -S --noconfirm $PARU_PACKAGES || true
+=======
+    # Desktop Environment Installation
+    while true; do
+		DE_CHOICE=$(gum choose --header "Choose your Desktop Environment (DE):" \
+            "Gnome(Good for beginners, similar to Mac)" \
+            "KDE(Good for beginners, similar to Windows)" \
+            "Hyprland(Tiling WM, basic dotfiles but requires more DIY)" \
+            "DWM(Similar to Hyprland)" \
+            "TTY (No install required)")
+            
+		if [[ "$DE_CHOICE" == "TTY (No install required)" ]]; then
+			echo "TTY is preinstalled !"
+            break
+        fi
+        
+        gum confirm "You selected: $DE_CHOICE. Proceed with installation?" && break
+        gum_echo "Returning to selection menu..."
+    done
+
+    case "$DE_CHOICE" in
+        "Gnome(Good for beginners, similar to Mac)")
+            gum_echo "Installing Gnome..."
+            pacman -S --noconfirm xorg xorg-server gnome gdm
+            systemctl enable gdm.service
+            ;;
+				"KDE(Good for beginners, similar to Windows)")
+            gum_echo "Installing KDE..."
+            pacman -S --noconfirm xorg xorg-server plasma kde-applications sddm
+            systemctl enable sddm.service
+            ;;
+        "Hyprland(Tiling WM, basic dotfiles but requires more DIY)")
+            gum_echo "Installing Hyprland..."
+            pacman -S --noconfirm wayland hyprland noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra kitty networkmanager
+
+            # call and run JaKooLit's arch hyprland install
+            gum_echo "Downloading JaKooLit's Hyprland, please run the script after installation!"
+            sleep 2
+            wget https://raw.githubusercontent.com/JaKooLit/Arch-Hyprland/main/auto-install.sh
+        
+            ;;
+		"DWM(Similar to Hyprland)")
+            gum_echo "Installing DWM..."
+			gum_echo "[WARNING] DWM requires more work in the future, for now this option doesn't do anything"
+            #pacman -S --noconfirm uwsm
+            #systemctl enable lightdm.service
+            ;;
+    esac
+
+    # Package Installation
+    while true; do
+        THEME=$(gum choose --header "Choose your installation profile:" "CSE" "Custom")
+        gum confirm "You selected: $THEME. Proceed with installation?" && break
+    done
+
+    case "$THEME" in
+        "CSE")
+            # ensure we have the right packages
+            PACMAN_PACKAGES=$(cat /root/LnOS/pacman_packages/CSE_packages.txt)
+            if [ ! -f "/root/LnOS/pacman_packages/CSE_packages.txt" ]; then
+                gum_error  "Error: CSE_packages.txt not found in /root/LnOS/pacman_packages/. ."
+            else
+                # checking if cloned
+                if $CLONED ; then
+                    PACMAN_PACKAGES=$(cat /root/LnOS/scripts/pacman_packages/CSE_packages.txt)
+                else
+                    gum_error "Error: CSE_packages.txt not found in /root/LnOS/scripts/pacman_packages/."
+                    exit 1
+                fi
+            fi
+			# Choose packages from CSE list (PACMAN)
+            PACMAN_PACKAGES=$(cat /root/LnOS/pacman_packages/CSE_packages.txt)
+            gum spin --spinner dot --title "Installing pacman packages..." -- pacman -S --noconfirm "$PACMAN_PACKAGES" 
+
+            # AUR will most likely be short with a few packages
+            # webcord, brave are the big ones that come to mind
+            # the reason is id like to teach users how to properly use aur
+            gum style \
+                --foreground 255 --border-foreground 130 --border double \
+                --width 100 --margin "1 2" --padding "2 4" \
+                'AUR (Arch User Repository) is less secure because its not maintained by Arch.' \
+                'LnOS Maintainers picked these packages because their releases were signed with PGP keys' \
+            gum confirm "Will you proceed to download AUR packages ? (i.e. brave, webcord)" || return
+            
+            # clone paru and build
+            git clone https://aur.archlinux.org/paru.git
+            cd paru
+            makepkg -si
+            # exit and clean up paru
+            cd ..
+            rm -rf paru
+
+
+            gum_echo "Please review the packages you're about to download"
+            # check if we have the right packages
+            PARU_PACKAGES=$(cat /root/LnOS/paru_packages/paru_packages.txt)
+            if [ ! -f "/root/LnOS/paru_packages/paru_packages.txt" ]; then
+                gum_error  "Error: CSE_packages.txt not found in /root/LnOS/paru_packages/. ."
+            else
+                # checking if cloned
+                if $CLONED ; then
+                    PARU_PACKAGES=$(cat /root/LnOS/scripts/paru_packages/paru_packages.txt)
+                else
+                    gum_error "Error: CSE_packages.txt not found in /root/LnOS/scripts/paru_packages/."
+                    exit 1
+                fi
+            fi
+            paru -S "$PARU_PACKAGES"
+
+
+            ;;
+        "Custom")
+            PACMAN_PACKAGES=$(gum input --header "Enter the pacman packages you want (space-separated):")
+            if [ -n "$PACMAN_PACKAGES" ]; then
+                gum spin --spinner dot --title "Installing pacman packages..." -- pacman -S --noconfirm "$PACMAN_PACKAGES"
+            fi
+
+            gum_echo "AUR (Arch User Repository) is less secure because it's not maintained by Arch. LnOS Maintainers picked these packages because their releases were signed with PGP keys"
+            gum confirm "Will you proceed to download AUR packages ? (i.e. brave, webcord)" || return
+            
+            # clone paru and build
+            git clone https://aur.archlinux.org/paru.git
+            cd paru
+            makepkg -si
+            # exit and clean up paru
+            cd ..
+            rm -rf paru
+
+
+            gum_echo "Please enter and review the packages you're about to download"
+            PARU_PACKAGES=$(gum input --header "Enter the paru packages you want (space-seperated):")
+            if [ -n "$PARU_PACKAGES" ]; then
+                paru -S "$PARU_PACKAGES"
+            fi
+            
+            ;;
+    esac
+}
+
+# Function to configure the system (common for both architectures)
+configure_system()
+{
+    # install gum again for pretty format
+    pacman -Sy --noconfirm gum
+
+    # Set timezone
+    ln -sf /usr/share/zoneinfo/America/Chicago /etc/localtime
+    hwclock --systohc
+
+    # Set locale
+    echo "en_US.UTF-8 UTF-8" > /etc/locale.gen
+    locale-gen
+    echo "LANG=en_US.UTF-8" > /etc/locale.conf
+
+    # Set hostname
+    echo "LnOs" > /etc/hostname
+
+    # Set hosts file
+    echo "127.0.0.1 localhost" > /etc/hosts
+    echo "::1 localhost" >> /etc/hosts
+
+    # Add DNS servers
+    echo "nameserver 1.1.1.1" > /etc/resolv.conf # Cloudflare
+
+    # Set root password
+    while true; do
+        rtpass=$(gum input --password --placeholder="Enter root password: ")
+        rtpass_verify=$(gum input --password --placeholder="Enter root password again: ")
+        if [ "$rtpass" = "$rtpass_verify" ]; then
+            echo "root:$rtpass" | chpasswd
+            break
+>>>>>>> test
         else
           gum_error "paru_packages.txt not found in repo."
         fi
@@ -188,7 +365,37 @@ setup_desktop_and_packages() {
       ;;
   esac
 
+<<<<<<< HEAD
   gum_echo "LnOS DE/Package setup finished."
+=======
+		# Get users password
+    while true; do
+        uspass=$(gum input --password --placeholder="Enter password for $username: ")
+        uspass_verify=$(gum input --password --placeholder="Enter password for $username again: ")
+        if [ "$uspass" = "$uspass_verify" ]; then
+            echo "$username:$uspass" | chpasswd
+            break
+        else
+            gum confirm "Passwords do not match. Try again?" || exit 1
+        fi
+    done
+
+    # Configure sudoers for wheel group
+    pacman -S --noconfirm sudo
+    echo "%wheel ALL=(ALL:ALL) ALL" > /etc/sudoers.d/10-wheel
+    chmod 440 /etc/sudoers.d/10-wheel
+
+    # Update 
+    pacman -Syu --noconfirm
+
+    
+    # setup the desktop environment
+    setup_desktop_and_packages "$username"
+
+	gum_echo "LnOS Basic DE/Package install completed!"
+
+    exit 0
+>>>>>>> test
 }
 
 # ---------- System configuration (chroot) ----------
@@ -349,6 +556,7 @@ copy_lnos_files() {
 install_x86_64() {
   setup_drive
 
+<<<<<<< HEAD
   gum_echo "Installing base system… this may take a bit."
   pacstrap /mnt base linux-hardened linux-firmware mkinitcpio btrfs-progs base-devel \
     git wget curl openssh networkmanager dhcpcd vi vim iw xdg-user-dirs
@@ -356,6 +564,18 @@ install_x86_64() {
   if [ $SWAP_SIZE -gt 0 ]; then
     if [ $NVME -eq 1 ]; then swapon "${DISK}p${SWAP_PART}"; else swapon "${DISK}${SWAP_PART}"; fi
   fi
+=======
+    # Install base system (zen kernel may be cool, but after some research about hardening, the linux hardened kernel makes 10x more sense for students and will be the default)
+    gum_echo "Installing base system, will take some time (Grab a coffee)"
+    pacstrap /mnt base linux-hardened linux-firmware btrfs-progs base-devel git wget networkmanager btrfs-progs openssh git dhcpcd networkmanager vi vim iw wget curl xdg-user-dirs
+
+    gum_echo "Base system install done!"
+
+    # Copy current console font config to installed system
+    if [ -f /etc/vconsole.conf ]; then
+        install -Dm644 /etc/vconsole.conf /mnt/etc/vconsole.conf
+    fi
+>>>>>>> test
 
   gum_echo "Generating fstab (UUID)…"
   genfstab -U /mnt >> /mnt/etc/fstab
@@ -432,6 +652,7 @@ EOF
   gum_echo "Copying LnOS repo into target system…"
   copy_lnos_files
 
+<<<<<<< HEAD
   gum_echo "Entering chroot to finish configuration…"
   arch-chroot /mnt /bin/bash -c "$(declare -f configure_system setup_desktop_and_packages gum_echo gum_error gum_complete); configure_system"
 
@@ -441,6 +662,15 @@ EOF
   gum_complete "Installation complete. Rebooting in 10 seconds…"
   sleep 10
   reboot
+=======
+    # Unmount and reboot
+    umount -R /mnt
+    for i in {10..1}; do
+        gum style --foreground 212 "Installation complete. Rebooting in $i seconds..."
+        sleep 1
+    done
+    reboot
+>>>>>>> test
 }
 
 # ---------- (Optional) ARM prep — placeholder ----------
