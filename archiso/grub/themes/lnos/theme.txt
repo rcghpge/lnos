@@ -1,0 +1,2 @@
+# Minimal LnOS GRUB theme (El Torito)
+desktop-image: "background.png"
