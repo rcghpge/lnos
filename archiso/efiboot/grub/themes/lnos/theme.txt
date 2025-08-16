@@ -1,0 +1,2 @@
+# Minimal LnOS GRUB theme (ESP)
+desktop-image: "background.png"
