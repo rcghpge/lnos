@@ -65,7 +65,6 @@ sed -i '/^\[multilib-testing\]/,/^Include/d' /etc/pacman.conf
 # Ensure core and extra remain in the config
 grep -q '^\[core\]' /etc/pacman.conf || echo -e "\n[core]\nInclude = /etc/pacman.d/mirrorlist" >> /etc/pacman.conf
 grep -q '^\[extra\]' /etc/pacman.conf || echo -e "\n[extra]\nInclude = /etc/pacman.d/mirrorlist" >> /etc/pacman.conf
->>>>>>> test
 
 # --- mkinitcpio.conf for LIVE environment (no mkinitcpio invocation) ----------
 # Keep archiso hooks; mkarchiso will use this when it builds the image.
