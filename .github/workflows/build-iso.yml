@@ -42,30 +42,70 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build x86_64 ISO in privileged container
+      - name: Free up disk space
         run: |
-          # Use Docker with full privileges and system mounts
+          # Clean up to maximize available space
+          sudo rm -rf /opt/hostedtoolcache || true
+          sudo rm -rf /usr/share/dotnet || true
+          sudo rm -rf /usr/local/lib/android || true
+          sudo rm -rf /usr/local/share/boost || true
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY" || true
+          sudo apt-get clean || true
+          sudo docker system prune -af || true
+          
+          echo "Disk space after cleanup:"
+          df -h
+
+      - name: Build x86_64 ISO in container
+        run: |
+          # Use Docker with minimal required privileges for archiso
           docker run --rm --privileged \
-            --cap-add=ALL \
-            --security-opt=apparmor:unconfined \
-            --security-opt=seccomp=unconfined \
-            -v /sys/fs/cgroup:/sys/fs/cgroup:rw \
-            -v /dev:/dev \
-            -v /proc:/proc \
+            --cap-add=SYS_ADMIN \
+            --cap-add=MKNOD \
+            --device=/dev/loop-control \
+            --device=/dev/loop0 \
+            --device=/dev/loop1 \
+            --device=/dev/loop2 \
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
             archlinux:latest \
             bash -c "
-              # Install required packages
-              pacman -Syu --noconfirm
-              pacman -S --noconfirm base-devel git archiso grub
+              # Monitor available space
+              echo '=== Initial disk space ==='
+              df -h
+              
+              # Install required packages efficiently
+              pacman-key --init
+              pacman-key --populate archlinux
+              pacman -Syu --noconfirm --disable-download-timeout
+              pacman -S --noconfirm --disable-download-timeout archiso
+              
+              echo '=== Disk space after package install ==='
+              df -h
+              
+              # Clean package cache to save space
+              pacman -Sc --noconfirm
               
               # Make scripts executable
               chmod +x build-iso.sh
               chmod +x archiso/airootfs/root/customize_airootfs.sh
               
-              # Build the ISO
-              ./build-iso.sh x86_64
+              echo '=== Starting ISO build ==='
+              # Build the ISO with output monitoring
+              ./build-iso.sh x86_64 2>&1 | tee /tmp/build.log
+              
+              echo '=== Final disk space ==='
+              df -h
+              
+              # Check if ISO was created
+              if ls out/*.iso 1> /dev/null 2>&1; then
+                echo '✅ ISO build successful'
+                ls -lh out/*.iso
+              else
+                echo '❌ ISO build failed'
+                cat /tmp/build.log
+                exit 1
+              fi
             "
 
       - name: Upload x86_64 ISO artifact
@@ -91,56 +131,69 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Free up disk space for ARM build
+        run: |
+          # Clean up to maximize available space for ARM builds
+          sudo rm -rf /opt/hostedtoolcache || true
+          sudo rm -rf /usr/share/dotnet || true
+          sudo rm -rf /usr/local/lib/android || true
+          sudo rm -rf /usr/local/share/boost || true
+          sudo apt-get clean || true
+          sudo docker system prune -af || true
+          
+          echo "Disk space after cleanup:"
+          df -h
+
       - name: Build aarch64 SD card images
         run: |
-          # Build both full and minimal ARM64 SD card images
+          # Build ARM64 SD card images with resource optimization
           docker run --rm --privileged \
-            --cap-add=ALL \
-            --security-opt=apparmor:unconfined \
+            --cap-add=SYS_ADMIN \
+            --cap-add=MKNOD \
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
             archlinux:latest \
             bash -c '
-              # Monitor disk space
-              echo "=== DISK SPACE BEFORE INSTALL ==="
+              # Monitor disk space throughout process
+              echo "=== INITIAL DISK SPACE ==="
               df -h
               
-              # Install minimal required tools (avoid base-devel to save space)
-              pacman -Syu --noconfirm
-              pacman -S --noconfirm git wget parted dosfstools e2fsprogs multipath-tools
+              # Install minimal required tools efficiently
+              pacman-key --init
+              pacman-key --populate archlinux
+              pacman -Syu --noconfirm --disable-download-timeout
+              pacman -S --noconfirm --disable-download-timeout git wget parted dosfstools e2fsprogs
               
               echo "=== DISK SPACE AFTER PACKAGE INSTALL ==="
               df -h
               
-              # Clean up package cache to save space
+              # Aggressive cleanup to save space
               pacman -Sc --noconfirm
-              
-              # Additional cleanup to free more space
               rm -rf /var/cache/pacman/pkg/*
               rm -rf /tmp/*
               
               echo "=== DISK SPACE AFTER CLEANUP ==="
               df -h
               
+              # Make scripts executable
               chmod +x build-arm-image.sh build-arm-minimal.sh
               
-              # Check disk space before building images
-              echo "=== DISK SPACE BEFORE IMAGE BUILD ==="
-              df -h
-              
-              # Build minimal ARM64 SD card image first (smaller, faster)
+              # Build minimal ARM64 SD card image only (saves space and time)
               echo "=== BUILDING MINIMAL ARM IMAGE ==="
-              ./build-arm-minimal.sh rpi4
+              ./build-arm-minimal.sh rpi4 2>&1 | tee /tmp/arm-build.log
               
-              echo "=== DISK SPACE AFTER MINIMAL BUILD ==="
+              echo "=== FINAL DISK SPACE ==="
               df -h
               
-              # Build full ARM64 SD card image
-              echo "=== BUILDING FULL ARM IMAGE ==="
-              ./build-arm-image.sh rpi4
-              
-              echo "=== DISK SPACE AFTER FULL BUILD ==="
-              df -h
+              # Verify build success
+              if ls out/*.img 1> /dev/null 2>&1; then
+                echo "✅ ARM image build successful"
+                ls -lh out/*.img
+              else
+                echo "❌ ARM image build failed"
+                cat /tmp/arm-build.log
+                exit 1
+              fi
             '
 
       - name: Upload aarch64 SD card images
@@ -230,39 +283,92 @@ jobs:
         run: |
           cd ./isos/
           
-          echo "🔐 Signing release files with GPG..."
+          echo "🔐 Setting up GPG environment..."
+          
+          # Verify secrets are available
+          if [ -z "$GPG_PRIVATE_KEY" ]; then
+            echo "❌ GPG_PRIVATE_KEY secret not set"
+            exit 1
+          fi
+          
+          if [ -z "$GPG_PASSPHRASE" ]; then
+            echo "❌ GPG_PASSPHRASE secret not set"
+            exit 1
+          fi
+          
+          # Configure GPG for batch operation
+          export GNUPGHOME=$(mktemp -d)
+          echo "use-agent" > "$GNUPGHOME/gpg.conf"
+          echo "pinentry-mode loopback" >> "$GNUPGHOME/gpg.conf"
+          echo "batch" >> "$GNUPGHOME/gpg.conf"
           
           # Import the private key
+          echo "📥 Importing GPG private key..."
           echo "$GPG_PRIVATE_KEY" | gpg --batch --import
           
-          # Get key ID for verification
+          # Get key ID and validate
           KEY_ID=$(gpg --list-secret-keys --with-colons | awk -F: '/^sec:/ {print $5}' | head -1)
+          if [ -z "$KEY_ID" ]; then
+            echo "❌ Failed to extract key ID from imported key"
+            exit 1
+          fi
+          
           echo "📋 Using GPG key: $KEY_ID"
           
+          # Verify this matches our expected key
+          EXPECTED_KEY="9486759312876AD7"
+          if [ "$KEY_ID" != "$EXPECTED_KEY" ]; then
+            echo "⚠️  Warning: Key ID $KEY_ID does not match expected $EXPECTED_KEY"
+          fi
+          
+          # Test signing capability
+          echo "test" | gpg --batch --yes \
+            --pinentry-mode loopback \
+            --passphrase "$GPG_PASSPHRASE" \
+            --local-user "$KEY_ID" \
+            --clearsign > /dev/null 2>&1 || {
+            echo "❌ GPG signing test failed"
+            exit 1
+          }
+          
+          echo "✅ GPG signing test successful"
+          
           # Sign all release files
+          SIGNED_COUNT=0
           for file in *.iso *.img *.xz; do
             if [ -f "$file" ]; then
               echo "🔏 Signing: $file"
               
               # Create detached ASCII-armored signature
-              gpg --batch --yes \
+              if gpg --batch --yes \
                   --pinentry-mode loopback \
                   --passphrase "$GPG_PASSPHRASE" \
                   --local-user "$KEY_ID" \
                   --detach-sign \
                   --armor \
                   --output "${file}.asc" \
-                  "$file"
-              
-              if [ -f "${file}.asc" ]; then
+                  "$file"; then
+                
                 echo "✅ Successfully signed: $file -> ${file}.asc"
                 echo "📝 Signature size: $(wc -c < "${file}.asc") bytes"
+                
+                # Verify the signature immediately
+                if gpg --verify "${file}.asc" "$file" >/dev/null 2>&1; then
+                  echo "✅ Signature verification successful for $file"
+                  SIGNED_COUNT=$((SIGNED_COUNT + 1))
+                else
+                  echo "❌ Signature verification failed for $file"
+                  exit 1
+                fi
               else
                 echo "❌ Failed to sign: $file"
+                exit 1
               fi
             fi
           done
           
+          echo ""
+          echo "🎉 Successfully signed $SIGNED_COUNT files"
           echo ""
           echo "=== SIGNED FILES ==="
           ls -lh *.asc 2>/dev/null || echo "No signature files found"
@@ -320,10 +426,10 @@ jobs:
             **Verification Methods:**
             ```bash
             # Quick verification (auto-imports key)
-            curl -fsSL https://raw.githubusercontent.com/uta-lug-nuts/LnOS/main/scripts/verify-signature.sh | bash -s -- <filename>
+            curl -fsSL https://raw.githubusercontent.com/rcghpge/lnos/main/scripts/verify-signature.sh | bash -s -- <filename>
             
             # Manual verification
-            curl -fsSL https://raw.githubusercontent.com/uta-lug-nuts/LnOS/main/keys/lnos-public-key.asc | gpg --import
+            curl -fsSL https://raw.githubusercontent.com/rcghpge/lnos/main/keys/lnos-public-key.asc | gpg --import
             gpg --verify <filename>.asc <filename>
             ```
             

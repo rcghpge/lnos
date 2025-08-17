@@ -19,8 +19,8 @@ This guide explains how to build and use the custom LnOS Arch Linux ISO.
 ### Local Build
 ```bash
 # Clone the repository
-git clone https://github.com/uta-lug-nuts/LnOS.git
-cd LnOS
+git clone https://github.com/rcghpge/lnos.git
+cd lnos
 
 # Build x86_64 ISO
 ./build-iso.sh x86_64

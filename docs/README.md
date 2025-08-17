@@ -26,13 +26,13 @@ The-LN-Project is a custom Linux distribution based on Arch Linux, designed spec
 * Easy to read Documentation source not only for LnOS but for any configurable tool thats on Arch Linux
 
 ## Want to request a feature or report a bug, open an Issue!
-* [Github issues](https://github.com/uta-lug-nuts/LnOS/issues)
+* [Github issues](https://github.com/rcghpge/lnos/issues)
 
 ## How to Contribute
 We welcome contributions from UTA students, faculty and the FOSS Community!
 
 ### Report Issues: Use GitHub Issues to report bugs or suggest features.
-* [Create a Issue](https://github.com/uta-lug-nuts/LnOS/issues/new/choose)
+* [Create a Issue](https://github.com/rcghpge/lnos/issues/new/choose)
 
 
 ### Testing / Developers Guide
@@ -61,7 +61,7 @@ Pre-built LnOS ISOs are available with the installer included.
 
 > ⚠️ **SECURITY NOTICE**: Always verify file signatures before use! All LnOS releases are digitally signed.
 
-1. Download the latest release from [GitHub Releases](https://github.com/uta-lug-nuts/LnOS/releases)
+1. Download the latest release from [GitHub Releases](https://github.com/rcghpge/lnos/releases)
    - `lnos-x86_64-*.iso` for Intel/AMD 64-bit systems
    - `lnos-aarch64-*.iso` for ARM 64-bit systems (Raspberry Pi 4+)
    - `*.asc` signature files for verification
@@ -95,7 +95,7 @@ Pre-built LnOS ISOs are available with the installer included.
 1. Install VS Code with "Dev Containers" extension
 2. Clone and open: 
    ```bash
-   git clone https://github.com/uta-lug-nuts/LnOS.git
+   git clone https://github.com/rcghpge/lnos.git
    cd LnOS
    code .
    ```
@@ -112,14 +112,14 @@ Pre-built LnOS ISOs are available with the installer included.
 sudo pacman -S archiso
 
 # Clone and build
-git clone https://github.com/uta-lug-nuts/LnOS.git
+git clone https://github.com/rcghpge/lnos.git
 cd LnOS
 ./build-iso.sh x86_64
 ```
 
 ##### Using Docker
 ```bash
-git clone https://github.com/uta-lug-nuts/LnOS.git
+git clone https://github.com/rcghpge/lnos.git
 cd LnOS
 
 # Build in Arch container
@@ -139,7 +139,7 @@ docker run --rm --privileged \
 To contribute to LnOS, use the VS Code dev container:
 
 1. Install VS Code with "Dev Containers" extension
-2. Clone repository: `git clone https://github.com/uta-lug-nuts/LnOS.git`
+2. Clone repository: `git clone https://github.com/rcghpge/lnos.git`
 3. Open in VS Code: `code LnOS`
 4. Reopen in container: `Ctrl+Shift+P` → "Dev Containers: Reopen in Container"
 
@@ -158,7 +158,7 @@ The dev container includes:
 
 3. Boot and install:
    ```bash
-   git clone https://github.com/uta-lug-nuts/LnOS.git
+   git clone https://github.com/rcghpge/lnos.git
    ./LnOS/scripts/LnOS-installer.sh --target=x86_64
    ``` 
 

@@ -10,7 +10,7 @@ Pre-built LnOS ISOs are available with the installer included.
 
 > ⚠️ **SECURITY NOTICE**: Always verify file signatures before use! All LnOS releases are digitally signed.
 
-1. Download the latest release from [GitHub Releases](https://github.com/uta-lug-nuts/LnOS/releases)
+1. Download the latest release from [GitHub Releases](https://github.com/rcghpge/lnos/releases)
    - `lnos-x86_64-*.iso` for Intel/AMD 64-bit systems
    - `lnos-aarch64-*.iso` for ARM 64-bit systems (Raspberry Pi 4+)
    - `*.asc` signature files for verification
@@ -46,7 +46,7 @@ You can actually clone the repo and build the iso for yourself!
 1. Install VS Code with "Dev Containers" extension
 2. Clone and open: 
    ```bash
-   git clone https://github.com/uta-lug-nuts/LnOS.git
+   git clone https://github.com/rcghpge/lnos.git
    cd LnOS
    code .
    ```
@@ -63,14 +63,14 @@ You can actually clone the repo and build the iso for yourself!
 sudo pacman -S archiso
 
 # Clone and build
-git clone https://github.com/uta-lug-nuts/LnOS.git
+git clone https://github.com/rcghpge/lnos.git
 cd LnOS
 ./build-iso.sh x86_64
 ```
 
 ##### Using Docker
 ```bash
-git clone https://github.com/uta-lug-nuts/LnOS.git
+git clone https://github.com/rcghpge/lnos.git
 cd LnOS
 
 # Build in Arch container

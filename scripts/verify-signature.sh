@@ -63,10 +63,10 @@ if ! gpg --list-keys "$LNOS_KEY_ID" >/dev/null 2>&1; then
     echo -e "${YELLOW}📥 LnOS GPG key not found. Importing from GitHub...${NC}"
     
     # Download and import public key
-    curl -fsSL "https://raw.githubusercontent.com/bakkertj/LnOS/main/keys/lnos-public-key.asc" | gpg --import || {
+    curl -fsSL "https://raw.githubusercontent.com/rcghpge/lnos/main/keys/lnos-public-key.asc" | gpg --import || {
         echo -e "${RED}❌ Failed to import public key${NC}"
         echo "Please manually import the public key:"
-        echo "curl -fsSL https://raw.githubusercontent.com/bakkertj/LnOS/main/keys/lnos-public-key.asc | gpg --import"
+        echo "curl -fsSL https://raw.githubusercontent.com/rcghpge/lnos/main/keys/lnos-public-key.asc | gpg --import"
         exit 1
     }
     
@@ -117,4 +117,4 @@ echo ""
 echo -e "${BLUE}📋 Next Steps:${NC}"
 echo "- The file is verified and safe to use"
 echo "- You can proceed with installation"
-echo "- For support, visit: https://github.com/bakkertj/LnOS"
+echo "- For support, visit: https://github.com/rcghpge/lnos"
