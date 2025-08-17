@@ -28,7 +28,8 @@ efibootmgr
 grub
 intel-ucode
 amd-ucode
-
+edk2-ovmf
+mkinitcpio
 
 # Block device utilities
 util-linux

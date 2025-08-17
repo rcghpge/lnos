@@ -8,9 +8,14 @@ iso_version="$(date +%Y.%m.%d)"
 install_dir="arch"
 buildmodes=('iso')
 esp_size_mb="128"
+# Testing new boot modes:
 bootmodes=('bios.syslinux.mbr' 'bios.syslinux.eltorito'
-           'uefi-ia32.grub.esp' 'uefi-x64.grub.esp'
-           'uefi-ia32.grub.eltorito' 'uefi-x64.grub.eltorito')
+           'uefi-x64.systemd-boot.esp' 'uefi-x64.systemd-boot.eltorito'
+           'uefi-x64.grub.esp' 'uefi-x64.grub.eltorito')
+# Original source tree boot modes (testing new boot modes)
+#bootmodes=('bios.syslinux.mbr' 'bios.syslinux.eltorito'
+#           'uefi-ia32.grub.esp' 'uefi-x64.grub.esp'
+#           'uefi-ia32.grub.eltorito' 'uefi-x64.grub.eltorito')
 arch="x86_64"
 pacman_conf="pacman.conf"
 airootfs_image_type="squashfs"
@@ -40,31 +45,33 @@ file_permissions=(
 
 # --- Post-build checks ---
 post_build() {
-  # Check ISO staging for the final ISO tree
   local iso_root="${work_dir}/iso/${install_dir}"
 
-  # BIOS: Syslinux menu
+  # BIOS: Syslinux
   if [[ -f "${iso_root}/boot/syslinux/syslinux.cfg" ]]; then
     sed -i \
       -e "s|%INSTALL_DIR%|${install_dir}|g" \
       -e "s|%ARCHISO_LABEL%|${iso_label}|g" \
+      -e "s|@ISO_LABEL@|${iso_label}|g" \
       "${iso_root}/boot/syslinux/syslinux.cfg"
   fi
 
-  # UEFI: GRUB 
+  # UEFI: GRUB
   if [[ -f "${iso_root}/boot/grub/grub.cfg" ]]; then
     sed -i \
       -e "s|%INSTALL_DIR%|${install_dir}|g" \
       -e "s|%ARCHISO_LABEL%|${iso_label}|g" \
+      -e "s|@ISO_LABEL@|${iso_label}|g" \
       "${iso_root}/boot/grub/grub.cfg"
   fi
 
-  # Check boot entries (e.g., systemd‑boot loader entries)
+  # UEFI: systemd-boot loader entries
   if [[ -d "${iso_root}/boot/loader/entries" ]]; then
     find "${iso_root}/boot/loader/entries" -type f -name '*.conf' -print0 \
       | xargs -0 -r sed -i \
         -e "s|%INSTALL_DIR%|${install_dir}|g" \
-        -e "s|%ARCHISO_LABEL%|${iso_label}|g"
+        -e "s|%ARCHISO_LABEL%|${iso_label}|g" \
+        -e "s|@ISO_LABEL@|${iso_label}|g"
   fi
 }
 

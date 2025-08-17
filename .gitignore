@@ -2,6 +2,7 @@
 .obsidian/
 _book/
 
+
 # ISO Build Artifacts
 out/
 *.iso
@@ -9,10 +10,12 @@ out/
 work/
 /tmp/archiso-tmp/
 
+
 # Build directories and cache
 build/
-dist/
+Wdist/
 cache/
+
 
 # Log files
 *.log
@@ -20,12 +23,16 @@ cache/
 build.log
 archiso.log
 
+
 # Temporary files
+*.fd
+*.qcow2
 *.bak
 *.tmp
 *.temp
 .tmp/
 temp/
+
 
 # OS generated files
 .DS_Store
@@ -36,6 +43,7 @@ temp/
 ehthumbs.db
 Thumbs.db
 
+
 # Editor files
 *~
 *.swp
@@ -44,15 +52,18 @@ Thumbs.db
 .vscode/launch.json
 .vscode/tasks.json
 
+
 # Package manager files
 node_modules/
 package-lock.json
 yarn.lock
 
+
 # Python cache
 __pycache__/
 *.py[cod]
 *$py.class
+
 
 # Environment files
 .env
@@ -60,9 +71,11 @@ __pycache__/
 .env.production
 .env.staging
 
+
 # Container runtime files
 .docker/
 docker-compose.override.yml
+
 
 # Test artifacts
 coverage/
@@ -88,6 +101,5 @@ custom-*.iso docs/arm-image-expansion.md
 # LnOS Internal Development
 windows/
 .gnupg/
-*.bak
 .pixi/*
 !.pixi/config.toml
