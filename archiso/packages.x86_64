@@ -46,6 +46,7 @@ wireless_tools
 netctl
 wget
 curl
+reflector
 
 # Installation tools
 arch-install-scripts
