@@ -46,6 +46,10 @@ LnOS/
 │   │   ├── root/              # Root user files
 │   │   └── usr/               # System binaries and data
 │   ├── efiboot/               # UEFI boot configuration
+│   ├── grub/                  # GRUB configuration and theme
+│   │   ├── fonts/             # GRUB fonts (unicode.pf2)
+│   │   ├── themes/lnos/       # LnOS GRUB theme
+│   │   └── grub.cfg           # GRUB boot configuration
 │   ├── syslinux/              # BIOS boot configuration
 │   ├── packages.x86_64        # Packages for x86_64
 │   ├── packages.aarch64       # Packages for aarch64
@@ -53,6 +57,7 @@ LnOS/
 │   └── profiledef.sh         # ISO build profile
 ├── scripts/                   # LnOS installer scripts
 │   ├── LnOS-installer.sh     # Main installer
+│   ├── validate-grub-theme.sh # GRUB theme validation
 │   └── pacman_packages/      # Package lists
 ├── build-iso.sh              # Local build script
 └── .github/workflows/        # GitHub Actions workflows
@@ -121,7 +126,27 @@ Edit the appropriate file:
 
 ### Modifying Boot Configuration
 - UEFI: Edit files in `archiso/efiboot/`
+- GRUB: Edit files in `archiso/grub/`
+  - `grub.cfg`: Boot menu configuration
+  - `fonts/`: GRUB font files (unicode.pf2)
+  - `themes/lnos/`: LnOS GRUB theme
 - BIOS: Edit files in `archiso/syslinux/`
+
+### GRUB Theme Customization
+The LnOS GRUB theme provides a consistent visual experience across UEFI boots:
+
+**Required Files:**
+- `archiso/grub/fonts/unicode.pf2` - Unicode font for proper text rendering
+- `archiso/grub/themes/lnos/theme.txt` - Theme configuration
+- `archiso/grub/themes/lnos/background.png` - Background image (≤1024×768, RGB)
+
+**Validation:**
+```bash
+# Validate GRUB theme before building
+./scripts/validate-grub-theme.sh
+```
+
+The build process automatically validates these files to ensure reliable UEFI theming.
 
 ### Custom Scripts
 Add scripts to `archiso/airootfs/usr/local/bin/` and they'll be available in the live environment.

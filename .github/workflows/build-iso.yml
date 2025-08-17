@@ -62,7 +62,11 @@ jobs:
               
               # Make scripts executable
               chmod +x build-iso.sh
+              chmod +x scripts/validate-grub-theme.sh
               chmod +x archiso/airootfs/root/customize_airootfs.sh
+              
+              # Validate GRUB theme files before building
+              ./scripts/validate-grub-theme.sh
               
               # Build the ISO
               ./build-iso.sh x86_64

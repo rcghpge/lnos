@@ -82,6 +82,18 @@ Server = https://mirror.leaseweb.net/archlinux/$repo/os/$arch
 EOF
 fi
 
+# Validate GRUB theme files before building
+print_status "Validating GRUB theme files..."
+if [[ -x "scripts/validate-grub-theme.sh" ]]; then
+    ./scripts/validate-grub-theme.sh
+    if [[ $? -ne 0 ]]; then
+        print_error "GRUB theme validation failed!"
+        exit 1
+    fi
+else
+    print_warning "GRUB theme validation script not found, continuing without validation"
+fi
+
 # Build the ISO
 print_status "Starting ISO build process..."
 if [[ $EUID -eq 0 ]]; then

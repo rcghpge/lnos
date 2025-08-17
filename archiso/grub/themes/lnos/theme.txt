@@ -1,0 +1,72 @@
+# LnOS GRUB Theme Configuration
+# Compatible with GRUB 2.x and designed for UEFI reliability
+
+# Desktop image
+desktop-image: "background.png"
+
+# Screen resolution
+screen-width: 1024
+screen-height: 768
+
+# Terminal settings
+terminal-font: "Unifont Regular 16"
+terminal-left: "10%"
+terminal-top: "10%"
+terminal-width: "80%"
+terminal-height: "80%"
+
+# Menu configuration
+title-text: "LnOS Custom Arch Linux"
+title-font: "Unifont Regular 18"
+title-color: "#ffffff"
+title-left: "50%"
+title-top: "20%"
+
+# Boot menu
++ boot_menu {
+  left = 25%
+  top = 35%
+  width = 50%
+  height = 40%
+  
+  item_font = "Unifont Regular 16"
+  item_color = "#ffffff"
+  item_spacing = 4
+  item_height = 24
+  item_padding = 8
+  
+  selected_item_font = "Unifont Regular 16"
+  selected_item_color = "#000000"
+  selected_item_pixmap = "select_c.png"
+  
+  menu_pixmap_style = "menu_*.png"
+  item_pixmap_style = "item_*.png"
+  selected_item_pixmap_style = "select_*.png"
+}
+
+# Progress bar (for loading)
++ progress_bar {
+  id = "__timeout__"
+  left = 25%
+  top = 80%
+  width = 50%
+  height = 16
+  
+  text_color = "#ffffff"
+  bar_style = "progress_*.png"
+  highlight_style = "progress_hl_*.png"
+}
+
+# Label for timeout countdown
++ label {
+  id = "__timeout__"
+  text = "Automatic boot in %d seconds..."
+  left = 25%
+  top = 85%
+  width = 50%
+  height = 16
+  
+  color = "#ffffff"
+  font = "Unifont Regular 14"
+  align = "center"
+}
