@@ -2,6 +2,7 @@
 # Core system
 base
 systemd
+util-linux
 linux-hardened
 linux-firmware
 pacman-contrib
@@ -21,6 +22,8 @@ mesa
 libglvnd
 mesa-demos
 spice-vdagent
+qemu-guest-agent
+virtiofsd
 
 # Boot and hardware
 syslinux

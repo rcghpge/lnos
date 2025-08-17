@@ -75,7 +75,7 @@ if ! grep -Eq '^\s*NoExtract\s*=.*\busr/lib/os-release\b' /etc/pacman.conf; then
   log "pacman: added NoExtract for usr/lib/os-release"
 fi
 
-# Safety net: restore our branding if filesystem ever overwrites it
+# Safety net: Set LnOS os-release in place if filesystem overwrites it
 mkdir -p /etc/pacman.d/hooks
 safe_write 0644 /etc/pacman.d/hooks/99-lnos-os-release.hook <<'EOF'
 [Trigger]
@@ -85,7 +85,7 @@ Type = Package
 Target = filesystem
 
 [Action]
-Description=Reassert LnOS os-release branding
+Description=Set LnOS os-release
 When=PostTransaction
 Exec=/usr/bin/bash -c 'if [[ -f /usr/lib/os-release.lnos ]]; then cp -f /usr/lib/os-release.lnos /usr/lib/os-release; fi'
 EOF
@@ -130,10 +130,10 @@ fi
 
 # --- mkinitcpio (live only) ---------------------------------------------------
 safe_write 0644 /etc/mkinitcpio.conf <<'EOF'
-MODULES=(loop dm_snapshot overlay squashfs virtio virtio_blk virtio_pci virtio_scsi virtio_net)
+MODULES=(loop squashfs dm_snapshot overlay isofs virtio virtio_pci virtio_blk virtio_scsi virtio_net achi nvme)
 BINARIES=()
 FILES=()
-HOOKS=(base udev archiso archiso_loop_mnt block filesystems keyboard fsck)
+HOOKS=(base udev modconf kms memdisk archiso archiso_loop_mnt block filesystems autodetect keyboard consolefont)
 COMPRESSION="zstd"
 EOF
 
@@ -161,6 +161,9 @@ else
 L+ /etc/resolv.conf - - - - /run/NetworkManager/resolv.conf
 EOF
 fi
+
+# Fallback if NetworkManager fails
+systemctl enable NetworkManager.service
 
 # --- tty1 autologin → lnos-autostart.sh --------------------------------------
 mkdir -p /etc/systemd/system/getty@tty1.service.d

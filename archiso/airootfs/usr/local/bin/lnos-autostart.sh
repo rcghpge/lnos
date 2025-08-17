@@ -61,6 +61,12 @@ fi
 # Make sure installer is executable
 chmod +x /root/LnOS/scripts/LnOS-installer.sh
 
+# Bring up networking (live env convenience)
+echo "Bringing up networking..."
+if command -v systemctl >/dev/null; then
+    systemctl enable --now NetworkManager.service 2>/dev/null || true
+fi
+
 echo "Starting LnOS installer..."
 echo ""
 
