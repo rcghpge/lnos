@@ -137,6 +137,9 @@ HOOKS=(base udev archiso archiso_loop_mnt block filesystems keyboard fsck)
 COMPRESSION="zstd"
 EOF
 
+# Grub menu @ boot
+install -Dm644 /usr/share/grub/unicode.pf2 /boot/grub/fonts/unicode.pf2
+
 # Avoid accidental rebuilds in the live env
 rm -f /etc/pacman.d/hooks/90-mkinitcpio.hook 2>/dev/null || true
 rm -f /etc/pacman.d/hooks/90-mkinitcpio-install.hook 2>/dev/null || true
