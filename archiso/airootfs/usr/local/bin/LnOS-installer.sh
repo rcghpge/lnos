@@ -127,7 +127,7 @@ setup_desktop_and_packages()
             wget https://raw.githubusercontent.com/JaKooLit/Arch-Hyprland/main/auto-install.sh
         
             ;;
-		"DWM(similar to Hyprland)")
+		"DWM(Similar to Hyprland)")
             gum_echo "Installing DWM..."
 			gum_echo "[WARNING] DWM requires more work in the future, for now this option doesn't do anything"
             #pacman -S --noconfirm uwsm
@@ -137,7 +137,7 @@ setup_desktop_and_packages()
 
     # Package Installation
     while true; do
-        THEME=$(gum choose --header "Choose your installation Profile:" "CSE" "Custom")
+        THEME=$(gum choose --header "Choose your installation profile:" "CSE" "Custom")
         gum confirm "You selected: $THEME. Proceed with installation?" && break
     done
 
@@ -249,6 +249,9 @@ configure_system()
 
     # Add DNS servers
     echo "nameserver 1.1.1.1" > /etc/resolv.conf # Cloudflare
+
+    # Configure /etc/os-release to be ours
+    cat /root/LnOS/os-release > /etc/os-release
 
     # Set root password
     while true; do
@@ -429,6 +432,7 @@ copy_lnos_files()
 	fi
 	mkdir -p /mnt/root/LnOS
 	cp -r "$LNOS_REPO/scripts/pacman_packages" /mnt/root/LnOS/
+    cp -r "$LNOS_REPO/scripts/files/os-release" /mnt/root/LnOS/
 	cp "$LNOS_REPO/scripts/LnOS-auto-setup.sh" /mnt/root/LnOS/ 2>/dev/null || true # Optional, ignore if not present
 	# Optionally copy documentation files
 	cp -r "$LNOS_REPO/docs" /mnt/root/LnOS/ 2>/dev/null || true

@@ -250,6 +250,9 @@ configure_system()
     # Add DNS servers
     echo "nameserver 1.1.1.1" > /etc/resolv.conf # Cloudflare
 
+    # Configure /etc/os-release to be ours
+    cat /root/LnOS/os-release > /etc/os-release
+
     # Set root password
     while true; do
         rtpass=$(gum input --password --placeholder="Enter root password: ")
@@ -291,9 +294,6 @@ configure_system()
     pacman -S --noconfirm sudo
     echo "%wheel ALL=(ALL:ALL) ALL" > /etc/sudoers.d/10-wheel
     chmod 440 /etc/sudoers.d/10-wheel
-
-    # Configure /etc/os-release to be ours
-    cat /root/LnOS/os-release > /etc/os-release
 
     # Update 
     pacman -Syu --noconfirm
@@ -432,7 +432,7 @@ copy_lnos_files()
 	fi
 	mkdir -p /mnt/root/LnOS
 	cp -r "$LNOS_REPO/scripts/pacman_packages" /mnt/root/LnOS/
-  cp -r "$LNOS_REPO/scripts/files/os-release" /mnt/root/LnOS/
+    cp -r "$LNOS_REPO/scripts/files/os-release" /mnt/root/LnOS/
 	cp "$LNOS_REPO/scripts/LnOS-auto-setup.sh" /mnt/root/LnOS/ 2>/dev/null || true # Optional, ignore if not present
 	# Optionally copy documentation files
 	cp -r "$LNOS_REPO/docs" /mnt/root/LnOS/ 2>/dev/null || true
