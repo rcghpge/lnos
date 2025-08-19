@@ -87,6 +87,7 @@ custom-*.iso docs/arm-image-expansion.md
 
 # LnOS Internal Development
 windows/
+sandbox-builds/
 .gnupg/
 *.bak
 .pixi/*

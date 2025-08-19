@@ -83,7 +83,7 @@ git checkout -b sandbox origin/sandbox   # or merge, stable, etc.
 
 # Sandbox branch
 # Install Pixi if not installed. Run Pixi shell env
-sudo pacman -S install Pixi
+sudo pacman -S install pixi
 pixi shell
 pixi info
 ```
