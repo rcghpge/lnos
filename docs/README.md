@@ -80,6 +80,12 @@ git branch -r
 
 # Checkout your desired branch locally
 git checkout -b sandbox origin/sandbox   # or merge, stable, etc.
+
+# Sandbox branch
+# Install Pixi if not installed. Run Pixi shell env
+sudo pacman -S install Pixi
+pixi shell
+pixi info
 ```
 
 If you're installing the official release or building from source tree start below at custom ISO installation for standard setup steps, including ISO flashing and installation from stable source tree builds.
