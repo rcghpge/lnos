@@ -1,7 +1,7 @@
 * [Issues and Requests](issues.md)
 * [User Guide](User-Guide.md)
 * [Installation](installation.md)
-* [Network Configuration]/networkconfigs.md)
+* [Network Configuration](/networkconfigs.md)
 * [Tiling Window Managers](tilingWM.md)
 * [Developer Guide](Developer-Guide.md)
 * [Contributing](Contributing.md)
