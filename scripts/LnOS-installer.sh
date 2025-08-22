@@ -26,28 +26,96 @@
 
 set -e
 
-# Prechecks for users that are cloning the install script to run in the archinstaller iso and not the lnos iso
-# the package paths are different on clones
-if cat /root/LnOS/pacman_packages/CSE_packages.txt | grep git -q ; then
-    echo "Detected cloned install, setting cloned to 1"
-    CLONED=1
-else
-CLONED=0
-fi
+# GLOBALS
+VERSION='1.0.0'
 
-# init pacman key
-pacman-key --init
+# VERSION
+[ "$*" = "--version" ] && echo "$VERSION" && exit 0
 
-if ! command -v gum &> /dev/null; then
-    echo "Installing gum..."
-    pacman -Sy --noconfirm gum
-fi
+# COLORS
+COLOR_BLACK=0   #  #000000
+COLOR_RED=9     #  #ff0000
+COLOR_GREEN=10  #  #00ff00
+COLOR_YELLOW=11 #  #ffff00
+COLOR_BLUE=12   #  #0000ff
+COLOR_PURPLE=13 #  #ff00ff
+COLOR_CYAN=14   #  #00ffff
+COLOR_WHITE=15  #  #ffffff
 
-if ! command -v nmtui &> /dev/null; then
-    echo "Installing network manager..."
-    pacman -Sy --noconfirm networkmanager
-    NetworkManager
-fi
+COLOR_FOREGROUND="${COLOR_BLUE}"
+COLOR_BACKGROUND="${COLOR_WHITE}"
+
+
+
+# ----------------------------- GUM WRAPPER ----------------------------- #
+
+# Gum wrapper
+gum_style() { gum style "${@}"; }
+gum_confirm() { gum confirm --prompt.foreground "$COLOR_FOREGROUND" --selected.background "$COLOR_FOREGROUND" --selected.foreground "$COLOR_BACKGROUND" --unselected.foreground "$COLOR_FOREGROUND" "${@}"; }
+gum_input() { gum input --placeholder "..." --prompt "> " --cursor.foreground "$COLOR_FOREGROUND" --prompt.foreground "$COLOR_FOREGROUND" --header.foreground "$COLOR_FOREGROUND" "${@}"; }
+gum_choose() { gum choose --cursor "> " --header.foreground "$COLOR_FOREGROUND" --cursor.foreground "$COLOR_FOREGROUND" "${@}"; }
+gum_filter() { gum filter --prompt "> " --indicator ">" --placeholder "Type to filter..." --height 8 --header.foreground "$COLOR_FOREGROUND" --indicator.foreground "$COLOR_FOREGROUND" --match.foreground "$COLOR_FOREGROUND" "${@}"; }
+gum_write() { gum write --prompt "> " --show-cursor-line --char-limit 0 --cursor.foreground "$COLOR_FOREGROUND" --header.foreground "$COLOR_FOREGROUND" "${@}"; }
+gum_spin() { gum spin --spinner line --title.foreground "$COLOR_FOREGROUND" --spinner.foreground "$COLOR_FOREGROUND" "${@}"; }
+
+
+# Gum colors (https://github.com/muesli/termenv?tab=readme-ov-file#color-chart)
+gum_foreground() { gum_style --foreground "$COLOR_FOREGROUND" "${@}"; }
+gum_background() { gum_style --foreground "$COLOR_BACKGROUND" "${@}"; }
+gum_white() { gum_style --foreground "$COLOR_WHITE" "${@}"; }
+gum_black() { gum_style --foreground "$COLOR_BLACK" "${@}"; }
+gum_red() { gum_style --foreground "$COLOR_RED" "${@}"; }
+gum_green() { gum_style --foreground "$COLOR_GREEN" "${@}"; }
+gum_blue() { gum_style --foreground "$COLOR_BLUE" "${@}"; }
+gum_yellow() { gum_style --foreground "$COLOR_YELLOW" "${@}"; }
+gum_cyan() { gum_style --foreground "$COLOR_CYAN" "${@}"; }
+gum_purple() { gum_style --foreground "$COLOR_PURPLE" "${@}"; }
+
+# Gum prints
+gum_title() { log_head "${*}" && gum join "$(gum_foreground --bold "+ ")" "$(gum_foreground --bold "${*}")"; }
+gum_info() { log_info "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "${*}")"; }
+gum_warn() { log_warn "$*" && gum join "$(gum_yellow --bold "• ")" "$(gum_white "${*}")"; }
+gum_fail() { log_fail "$*" && gum join "$(gum_red --bold "• ")" "$(gum_white "${*}")"; }
+
+# Gum key & value
+gum_proc() { log_proc "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white --bold "$(print_filled_space 24 "${1}")")" "$(gum_white "  >  ")" "$(gum_green "${2}")"; }
+gum_property() { log_prop "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "$(print_filled_space 24 "${1}")")" "$(gum_green --bold "  >  ")" "$(gum_white --bold "${2}")"; }
+
+# ----------------------------- LOGGING WRAPPER ----------------------------- #
+
+write_log() { echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | ${*}" >>"$SCRIPT_LOG"; }
+log_info() { write_log "INFO | ${*}"; }
+log_warn() { write_log "WARN | ${*}"; }
+log_fail() { write_log "FAIL | ${*}"; }
+log_head() { write_log "HEAD | ${*}"; }
+log_proc() { write_log "PROC | ${*}"; }
+log_prop() { write_log "PROP | ${*}"; }
+
+# ----------------------------- Helper Functions ----------------------------- #
+
+gum_header() 
+{
+    local title="$1"
+    clear && gum_foreground '
+ █████                     ███████     █████████ 
+░░███                    ███░░░░░███  ███░░░░░███
+ ░███        ████████   ███     ░░███░███    ░░░ 
+ ░███       ░░███░░███ ░███      ░███░░█████████ 
+ ░███        ░███ ░███ ░███      ░███ ░░░░░░░░███
+ ░███      █ ░███ ░███ ░░███     ███  ███    ░███
+ ███████████ ████ █████ ░░░███████░  ░░█████████ 
+░░░░░░░░░░░ ░░░░ ░░░░░    ░░░░░░░     ░░░░░░░░░  '
+    local header_version="               v. ${VERSION}"
+    gum_white --margin "1 0" --align left --bold "Welcome to ${title} ${header_version}"
+    return 0
+}
+
+print_filled_space() 
+{
+    local total="$1" && local text="$2" && local length="${#text}"
+    [ "$length" -ge "$total" ] && echo "$text" && return 0
+    local padding=$((total - length)) && printf '%s%*s\n' "$text" "$padding" ""
+}
 
 # logging functions (only for 1 line)
 gum_echo()
@@ -62,15 +130,6 @@ gum_complete()
 {
     gum style --border normal --margin "1 2" --padding "2 4" --border-foreground 158 "$@"
 }
-
-# Make user connect to internet
-# make it a bit simpler and just force nmtui on them
-echo "Please connect to the internet"
-
-gum_echo "Connect to the internet? (Installer won't work without it)"
-gum confirm || exit
-
-nmtui
 
 
 # Combines part 2 into part 1 script as to make installation easier
@@ -548,6 +607,81 @@ prepare_arm()
 }
 
 # Main logic
+
+# Prechecks for users that are cloning the install script to run in the archinstaller iso and not the lnos iso
+# the package paths are different on clones
+if cat /root/LnOS/pacman_packages/CSE_packages.txt | grep git -q ; then
+    #echo "Detected cloned install, setting cloned to 1"
+    CLONED=1
+else
+CLONED=0
+fi
+
+# clear log
+[ -f "$SCRIPT_LOG" ] && rm "$SCRIPT_LOG"
+
+# init pacman key
+pacman-key --init
+# check gum and network manager
+if ! command -v gum &> /dev/null; then
+    echo "Installing gum..."
+    pacman -Sy --noconfirm gum
+fi
+if ! command -v nmtui &> /dev/null; then
+    echo "Installing network manager..."
+    pacman -Sy --noconfirm networkmanager
+    NetworkManager
+fi
+
+# Make user connect to internet
+# make it a bit simpler and just force nmtui on them
+echo "Please connect to the internet"
+
+gum_echo "Connect to the internet? (Installer won't work without it)"
+gum confirm || exit
+
+nmtui
+
+# user config
+while (true); do
+
+    gum_header "LnOS Installer"
+    gum_white 'Please make sure you have: ' && echo
+    gum_white '• Backed up your important data'
+    gum_white '• A stable internet connection'
+    gum_white '• Secure Boot disabled'
+
+    echo #\n
+
+    # Selectors
+    echo && gum_title "Core Setup"
+    until select_username; do :; done
+    until select_password; do :; done
+    until select_timezone; do :; done
+    until select_language; do :; done
+    until select_keyboard; do :; done
+    until select_filesystem; do :; done
+    until select_bootloader; do :; done
+    until select_disk; do :; done
+    echo && gum_title "Desktop Setup"
+    until select_enable_desktop_environment; do :; done
+    until select_enable_desktop_driver; do :; done
+    until select_enable_desktop_slim; do :; done
+    until select_enable_desktop_keyboard; do :; done
+    echo && gum_title "Feature Setup"
+    until select_enable_encryption; do :; done
+    until select_enable_core_tweaks; do :; done
+    until select_enable_bootsplash; do :; done
+    until select_enable_multilib; do :; done
+    until select_enable_aur; do :; done
+    until select_enable_housekeeping; do :; done
+    until select_enable_shell_enhancement; do :; done
+    until select_enable_manager; do :; done
+
+done
+
+
+
 if [ "$1" = "--target=x86_64" ]; then
   install_x86_64
 elif [ "$1" = "--target=aarch64" ]; then
