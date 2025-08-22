@@ -168,6 +168,7 @@ setup_desktop_and_packages()
                 --width 100 --margin "1 2" --padding "2 4" \
                 'AUR (Arch User Repository) is less secure because its not maintained by Arch.' \
                 'LnOS Maintainers picked these packages because their releases were signed with PGP keys' \
+            
             gum confirm "Will you proceed to download AUR packages ? (i.e. brave, webcord)" || return
             
             # clone paru and build
@@ -448,7 +449,7 @@ install_x86_64()
 
     # Install base system (zen kernel may be cool, but after some research about hardening, the linux hardened kernel makes 10x more sense for students and will be the default)
     gum_echo "Installing base system, will take some time (Grab a coffee)"
-    pacstrap /mnt base linux-hardened linux-firmware btrfs-progs base-devel git wget networkmanager btrfs-progs openssh git dhcpcd networkmanager vi vim iw wget curl xdg-user-dirs
+    pacstrap /mnt base linux-hardened linux-firmware btrfs-progs base-devel git wget networkmanager btrfs-progs openssh git dhcpcd networkmanager vi vim iw wget curl xdg-user-dirs fastfetch
 
     gum_echo "Base system install done!"
 
