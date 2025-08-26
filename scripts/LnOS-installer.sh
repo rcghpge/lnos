@@ -28,8 +28,8 @@ set -e
 
 # GLOBALS
 VERSION='1.0.0'
+SCRIPT_LOG="./installer.log"
 
-# VERSION
 [ "$*" = "--version" ] && echo "$VERSION" && exit 0
 
 # COLORS
@@ -44,6 +44,19 @@ COLOR_WHITE=15  #  #ffffff
 
 COLOR_FOREGROUND="${COLOR_BLUE}"
 COLOR_BACKGROUND="${COLOR_WHITE}"
+
+
+# required vars
+LNOS_USERNAME="null"
+LNOS_USERPASS="null"
+LNOS_ROOTPASS="null"
+LNOS_TIMEZONE="null"
+LNOS_LOCALE_LANG="null"
+LNOS_KEYBOARD_KEYMAP="null"
+LNOS_DISK="null"
+LNOS_ENCRYPTION="null"
+LNOS_DESKTOP_GRAPHICS_DRIVER="null"
+LNOS_AUR_HELPER="null"
 
 
 
@@ -116,6 +129,296 @@ print_filled_space()
     [ "$length" -ge "$total" ] && echo "$text" && return 0
     local padding=$((total - length)) && printf '%s%*s\n' "$text" "$padding" ""
 }
+
+
+# Presets for the user to fill out
+
+get_username() 
+{
+    # prompt for user
+    local username
+
+    while true; do
+        username=$(gum input --prompt "Enter username: ")
+        if [ -z "$username" ]; then
+            gum_error "Error: Username cannot be empty."
+        else
+            break
+        fi
+    done
+
+    LNOS_USERNAME=$username
+    gum_property "Username" "$LNOS_USERNAME"
+    return 0
+}
+
+get_password() 
+{ 
+    local rtpass
+    local rtpass_verify
+
+    while true; do
+        rtpass=$(gum input --password --placeholder="Enter root password: ")
+        rtpass_verify=$(gum input --password --placeholder="Enter root password again: ")
+        if [ "$rtpass" = "$rtpass_verify" ]; then
+            echo "root:$rtpass" | chpasswd
+            break
+        else
+            gum confirm "Passwords do not match. Try again?" || exit 1
+        fi
+    done
+    LNOS_ROOTPASS=$rtpass
+
+    local uspass
+    local uspass_verify
+
+    # Get users password
+    while true; do
+        uspass=$(gum input --password --placeholder="Enter password for $username: ")
+        uspass_verify=$(gum input --password --placeholder="Enter password for $username again: ")
+        if [ "$uspass" = "$uspass_verify" ]; then
+            echo "$username:$uspass" | chpasswd
+            break
+        else
+            gum confirm "Passwords do not match. Try again?" || exit 1
+        fi
+    done
+
+    LNOS_USERPASS=$uspass
+    
+    return 0
+}
+
+get_timezone() 
+{
+
+    local tz_auto user_input
+    tz_auto="$(curl -s http://ip-api.com/line?fields=timezone)"
+    user_input=$(gum_input --header "+ Enter Timezone (auto-detected)" --value "$tz_auto") || exit 1
+    [ -z "$user_input" ] && return 1 # Check if new value is null
+    if [ ! -f "/usr/share/zoneinfo/${user_input}" ]; then
+        gum_confirm --affirmative="Ok" --negative="" "Timezone '${user_input}' is not supported"
+        return 1
+    fi
+    LNOS_TIMEZONE="$user_input" && properties_generate # Set property and generate properties file
+
+    gum_property "Timezone" "$ARCH_OS_TIMEZONE"
+    return 0
+}
+
+
+# shellcheck disable=SC2001
+select_language() 
+{
+    
+    local user_input items options filter
+    # Fetch available options (list all from /usr/share/i18n/locales and check if entry exists in /etc/locale.gen)
+    mapfile -t items < <(basename -a /usr/share/i18n/locales/* | grep -v "@") # Create array without @ files
+    # Add only available locales (!!! intense command !!!)
+    options=() && for item in "${items[@]}"; do grep -q -e "^$item" -e "^#$item" /etc/locale.gen && options+=("$item"); done
+    # shellcheck disable=SC2002
+    [ -r /root/.zsh_history ] && filter=$(cat /root/.zsh_history | grep 'loadkeys' | head -n 2 | tail -n 1 | cut -d';' -f2 | cut -d' ' -f2 | cut -d'-' -f1)
+    # Select locale
+    user_input=$(gum_filter --value="$filter" --header "+ Choose Language" "${options[@]}") || exit 1
+    [ -z "$user_input" ] && return 1  # Check if new value is null
+    LNOS_LOCALE_LANG="$user_input" # Set property
+    # Set locale.gen properties (auto generate LNOS_LOCALE_GEN_LIST)
+    LNOS_LOCALE_GEN_LIST=() && while read -r locale_entry; do
+        LNOS_LOCALE_GEN_LIST+=("$locale_entry")
+        # Remove leading # from matched lang in /etc/locale.gen and add entry to array
+    done < <(sed "/^#${LNOS_LOCALE_LANG}/s/^#//" /etc/locale.gen | grep "$LNOS_LOCALE_LANG")
+    # Add en_US fallback (every language) if not already exists in list
+    [[ "${LNOS_LOCALE_GEN_LIST[*]}" != *'en_US.UTF-8 UTF-8'* ]] && LNOS_LOCALE_GEN_LIST+=('en_US.UTF-8 UTF-8')
+    properties_generate # Generate properties file (for LNOS_LOCALE_LANG & LNOS_LOCALE_GEN_LIST)
+
+    gum_property "Language" "$LNOS_LOCALE_LANG"
+    return 0
+}
+
+
+select_keyboard() 
+{
+    
+    local user_input items options filter
+    mapfile -t items < <(command localectl list-keymaps)
+    options=() && for item in "${items[@]}"; do options+=("$item"); done
+    # shellcheck disable=SC2002
+    [ -r /root/.bash_history ] && filter=$(cat /root/.zsh_history | grep 'loadkeys' | head -n 2 | tail -n 1 | cut -d';' -f2 | cut -d' ' -f2 | cut -d'-' -f1)
+    user_input=$(gum_filter --value="$filter" --header "+ Choose Keyboard" "${options[@]}") || exit 1
+    [ -z "$user_input" ] && return 1                             # Check if new value is null
+    LNOS_KEYBOARD_KEYMAP="$user_input"
+
+    gum_property "Keyboard" "$LNOS_KEYBOARD_KEYMAP"
+    return 0
+}
+
+select_disk() 
+{
+
+    # Prompt user to select a disk
+    local DISK_SELECTION DISK
+    DISK_SELECTION=$(lsblk -d -o NAME,SIZE,MODEL,TYPE | grep -E 'disk' | grep -E 'nvme|sd[a-z]|mmcblk[0-9]' | gum choose --header "Select the disk to install on (or Ctrl-C to exit):")
+    DISK="/dev/$(echo "$DISK_SELECTION" | awk '{print $1}')"
+
+    if [ -z "$DISK" ]; then
+        gum style --border normal --margin "1" --padding "1" --border-foreground 1 "Error: No disk selected."
+        log_fail "No Disk Selected"
+        exit 1
+    fi
+
+    LNOS_DISK=$DISK
+    
+    gum_property "Disk" "$LNOS_DISK"
+    return 0
+}
+
+select_enable_encryption() 
+{
+    gum_confirm "Enable Disk Encryption?"
+    local user_confirm=$?
+    [ $user_confirm = 130 ] && {
+        return 1
+    }
+    local user_input
+    [ $user_confirm = 1 ] && user_input="false"
+    [ $user_confirm = 0 ] && user_input="true"
+    LNOS_ENCRYPTION="$user_input" 
+    
+    gum_property "Disk Encryption" "$LNOS_ENCRYPTION"
+    return 0
+}
+
+
+choose_desktop_environment() 
+{
+    # Desktop Environment Installation
+    local DE_CHOICE
+    while true; do
+		DE_CHOICE=$(gum choose --header "Choose your Desktop Environment (DE):" \
+            "Gnome(Good for beginners, similar to Mac)" \
+            "KDE(Good for beginners, similar to Windows)" \
+            "Hyprland(Tiling WM, basic dotfiles but requires more DIY)" \
+            "DWM(Similar to Hyprland)" \
+            "TTY (No install required)")
+            
+		if [[ "$DE_CHOICE" == "TTY (No install required)" ]]; then
+			echo "TTY is preinstalled !"
+            break
+        fi
+        
+        gum confirm "You selected: $DE_CHOICE. Proceed with installation?" && break
+        gum_echo "Returning to selection menu..."
+    done
+
+    LNOS_DE=$DE_CHOICE
+    return 0
+}
+
+select_enable_desktop_driver() 
+{
+    if [ -z "$LNOS_DESKTOP_GRAPHICS_DRIVER" ] || [ "$LNOS_DESKTOP_GRAPHICS_DRIVER" = "null" ]; then
+        local user_input options
+        options=("mesa" "intel_i915" "nvidia" "amd" "ati")
+        user_input=$(gum_choose --header "+ Choose Desktop Graphics Driver (default: mesa)" "${options[@]}") || trap_gum_exit_confirm
+        [ -z "$user_input" ] && return 1                                     # Check if new value is null
+        LNOS_DESKTOP_GRAPHICS_DRIVER="$user_input"
+    fi
+
+    gum_property "Desktop Graphics Driver" "$LNOS_DESKTOP_GRAPHICS_DRIVER"
+    
+    return 0
+}
+
+
+select_enable_aur() 
+{
+    local user_input options
+    options=("paru" "paru-bin" "paru-git" "none")
+    user_input=$(gum_choose --header "+ Choose AUR Helper (default: paru)" "${options[@]}") || trap_gum_exit_confirm
+    [ -z "$user_input" ] && return 1                        # Check if new value is null
+    LNOS_AUR_HELPER="$user_input" 
+    
+    gum_property "AUR Helper" "$LNOS_AUR_HELPER"
+    return 0
+}
+
+# ---------------------------------------------------------------------------------------------------
+
+select_enable_multilib() {
+    if [ -z "$ARCH_OS_MULTILIB_ENABLED" ]; then
+        gum_confirm "Enable 32 Bit Support?"
+        local user_confirm=$?
+        [ $user_confirm = 130 ] && {
+            trap_gum_exit_confirm
+            return 1
+        }
+        local user_input
+        [ $user_confirm = 1 ] && user_input="false"
+        [ $user_confirm = 0 ] && user_input="true"
+        ARCH_OS_MULTILIB_ENABLED="$user_input" && properties_generate # Set value and generate properties file
+    fi
+    gum_property "32 Bit Support" "$ARCH_OS_MULTILIB_ENABLED"
+    return 0
+}
+
+# ---------------------------------------------------------------------------------------------------
+
+select_enable_housekeeping() {
+    if [ -z "$ARCH_OS_HOUSEKEEPING_ENABLED" ]; then
+        gum_confirm "Enable Housekeeping?"
+        local user_confirm=$?
+        [ $user_confirm = 130 ] && {
+            trap_gum_exit_confirm
+            return 1
+        }
+        local user_input
+        [ $user_confirm = 1 ] && user_input="false"
+        [ $user_confirm = 0 ] && user_input="true"
+        ARCH_OS_HOUSEKEEPING_ENABLED="$user_input" && properties_generate # Set value and generate properties file
+    fi
+    gum_property "Housekeeping" "$ARCH_OS_HOUSEKEEPING_ENABLED"
+    return 0
+}
+
+# ---------------------------------------------------------------------------------------------------
+
+select_enable_shell_enhancement() {
+    if [ -z "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" ]; then
+        gum_confirm "Enable Shell Enhancement?"
+        local user_confirm=$?
+        [ $user_confirm = 130 ] && {
+            trap_gum_exit_confirm
+            return 1
+        }
+        local user_input
+        [ $user_confirm = 1 ] && user_input="false"
+        [ $user_confirm = 0 ] && user_input="true"
+        ARCH_OS_SHELL_ENHANCEMENT_ENABLED="$user_input" && properties_generate # Set value and generate properties file
+    fi
+    gum_property "Shell Enhancement" "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED"
+    return 0
+}
+
+# ---------------------------------------------------------------------------------------------------
+
+select_enable_manager() 
+{
+    if [ -z "$ARCH_OS_MANAGER_ENABLED" ]; then
+        gum_confirm "Enable Arch OS Manager?"
+        local user_confirm=$?
+        [ $user_confirm = 130 ] && {
+            trap_gum_exit_confirm
+            return 1
+        }
+        local user_input
+        [ $user_confirm = 1 ] && user_input="false"
+        [ $user_confirm = 0 ] && user_input="true"
+        ARCH_OS_MANAGER_ENABLED="$user_input" && properties_generate # Set value and generate properties file
+    fi
+    gum_property "Arch OS Manager" "$ARCH_OS_MANAGER_ENABLED"
+    return 0
+}
+
 
 # logging functions (only for 1 line)
 gum_echo()
@@ -335,10 +638,10 @@ configure_system()
         fi
     done
 
-		# set groups to user
+    # set groups to user
     useradd -m -G audio,video,input,wheel,sys,log,rfkill,lp,adm -s /bin/bash "$username"
 
-		# Get users password
+    # Get users password
     while true; do
         uspass=$(gum input --password --placeholder="Enter password for $username: ")
         uspass_verify=$(gum input --password --placeholder="Enter password for $username again: ")
