@@ -31,12 +31,21 @@ sudo ip link set wlp2s0 up
 Check available networks:
 ```bash
 nmcli dev wifi list
+
+# or
+
+nmcli device wifi list
 ```
 
 Connect:
 
 ```bash
 nmcli dev wifi connect "SSID" password "PASSWORD"
+
+# or
+
+nmcli device wifi connect "eduroam" \
+    --ask
 ```
 
 ## 4. Verify internet
