@@ -64,6 +64,6 @@ Sometimes needs firmware (`linux-firmware` should cover most cases — can add i
 
 ## 6. LnOS @ UTA
 
-If all else fails for UTA students I recommend checking UTA OIT guideline to connect to Wifi internet: https://oit.uta.edu/services/wireless-network/
+If all else fails for UTA students I recommend checking UTA OIT WiFi guidelines to connect to WiFi internet: https://oit.uta.edu/services/wireless-network/
 
 ---
