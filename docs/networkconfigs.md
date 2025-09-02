@@ -62,4 +62,8 @@ Missing driver module in `mkinitcpio.conf` or packages list (e.g. `r8168`, `iwlw
 
 Sometimes needs firmware (`linux-firmware` should cover most cases — can add it in `packages.x86_64`/`packages.aarch64`).
 
+## 6. LnOS @ UTA
+
+If all else fails for UTA students I recommend checking UTA OIT guideline to connect to Wifi internet: https://oit.uta.edu/services/wireless-network/
+
 ---
