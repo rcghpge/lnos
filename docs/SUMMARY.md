@@ -3,6 +3,7 @@
 * [Installation](installation.md)
 * [Tiling Window Managers](tilingWM.md)
 * [Developer Guide](Developer-Guide.md)
+* [Network Configuration](networkconfigs.md)
 * [Contributing](Contributing.md)
 * [Testing](testing.md)
 * [ISO Build](iso-build-readme.md)
