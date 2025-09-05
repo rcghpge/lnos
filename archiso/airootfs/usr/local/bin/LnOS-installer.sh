@@ -82,6 +82,18 @@ if [[ -t 0 && -t 1 && -t 2 ]]; then HAS_TTY=1; fi
 _gum_ok(){ need gum && [[ $HAS_TTY -eq 1 ]]; }
 _gum_spin_show_output_ok(){ _gum_ok && gum spin --help 2>&1 | grep -q -- '--show-output'; }
 
+# Prechecks for users that are cloning the install script to run in the archinstaller iso and not the lnos iso
+# the package paths are different on clones
+if cat /root/LnOS/pacman_packages/CSE_packages.txt | grep git -q ; then
+    echo "Detected cloned install, setting cloned to 1"
+    CLONED=1
+else
+CLONED=0
+fi
+
+# init pacman key
+pacman-key --init
+
 gecho(){ if _gum_ok; then gum style --border normal --margin "1 2" --padding "1 3" --border-foreground 212 "$@"; else echo "$*"; fi; }
 
 gerror(){ if _gum_ok; then gum style --border double --margin "1 2" --padding "1 3" --border-foreground 1 "$@"; else echo "[ERROR] $*"; fi; }
@@ -235,6 +247,42 @@ _list_installable_disks() {
     grep -Ev '^/dev/(loop|ram|zram|sr|md|fd)' || true
 }
 
+if ! command -v nmtui &> /dev/null; then
+    echo "Installing network manager..."
+    pacman -Sy --noconfirm networkmanager
+    NetworkManager
+fi
+
+# logging functions (only for 1 line)
+gum_echo()
+{
+    gum style --border normal --margin "1 2" --padding "2 4" --border-foreground 130 "$@"
+}
+gum_error()
+{
+    gum style --border double --margin "1 2" --padding "2 4" --border-foreground 1 "$@"
+}
+gum_complete()
+{
+    gum style --border normal --margin "1 2" --padding "2 4" --border-foreground 158 "$@"
+}
+
+# Make user connect to internet
+# make it a bit simpler and just force nmtui on them
+echo "Please connect to the internet"
+
+gum_echo "Connect to the internet? (Installer won't work without it)"
+gum confirm || exit
+
+nmtui
+
+
+# Combines part 2 into part 1 script as to make installation easier
+# sets up the desktop environment and packages
+setup_desktop_and_packages()
+{
+    local username="$1" # Pass username as parameter
+
 choose_disk() {
   local live dev choices=() pick
   live="$(_live_boot_device || true)"
@@ -386,6 +434,148 @@ setup_desktop_and_packages(){
   esac
 
   gok "LnOS desktop/package setup completed."
+    # Install essential packages 
+  	gum spin --spinner dot --title "Installing developer tools needed for packages" -- pacman -S --noconfirm base-devel git wget networkmanager btrfs-progs openssh git dhcpcd networkmanager vi vim iw netcl wget curl xdg-user-dirs
+    
+    # Enable network services
+    systemctl enable dhcpcd
+    systemctl enable NetworkManager
+
+    # Desktop Environment Installation
+    while true; do
+		DE_CHOICE=$(gum choose --header "Choose your Desktop Environment (DE):" \
+            "Gnome(Good for beginners, similar to Mac)" \
+            "KDE(Good for beginners, similar to Windows)" \
+            "Hyprland(Tiling WM, basic dotfiles but requires more DIY)" \
+            "DWM(Similar to Hyprland)" \
+            "TTY (No install required)")
+            
+		if [[ "$DE_CHOICE" == "TTY (No install required)" ]]; then
+			echo "TTY is preinstalled !"
+            break
+        fi
+        
+        gum confirm "You selected: $DE_CHOICE. Proceed with installation?" && break
+        gum_echo "Returning to selection menu..."
+    done
+
+    case "$DE_CHOICE" in
+        "Gnome(Good for beginners, similar to Mac)")
+            gum_echo "Installing Gnome..."
+            pacman -S --noconfirm xorg xorg-server gnome gdm
+            systemctl enable gdm.service
+            ;;
+				"KDE(Good for beginners, similar to Windows)")
+            gum_echo "Installing KDE..."
+            pacman -S --noconfirm xorg xorg-server plasma kde-applications sddm
+            systemctl enable sddm.service
+            ;;
+        "Hyprland(Tiling WM, basic dotfiles but requires more DIY)")
+            gum_echo "Installing Hyprland..."
+            pacman -S --noconfirm wayland hyprland noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra kitty networkmanager
+
+            # call and run JaKooLit's arch hyprland install
+            gum_echo "Downloading JaKooLit's Hyprland, please run the script after installation!"
+            sleep 2
+            wget https://raw.githubusercontent.com/JaKooLit/Arch-Hyprland/main/auto-install.sh
+        
+            ;;
+		"DWM(similar to Hyprland)")
+            gum_echo "Installing DWM..."
+			gum_echo "[WARNING] DWM requires more work in the future, for now this option doesn't do anything"
+            #pacman -S --noconfirm uwsm
+            #systemctl enable lightdm.service
+            ;;
+    esac
+
+    # Package Installation
+    while true; do
+        THEME=$(gum choose --header "Choose your installation Profile:" "CSE" "Custom")
+        gum confirm "You selected: $THEME. Proceed with installation?" && break
+    done
+
+    case "$THEME" in
+        "CSE")
+            # ensure we have the right packages
+            PACMAN_PACKAGES=$(cat /root/LnOS/pacman_packages/CSE_packages.txt)
+            if [ ! -f "/root/LnOS/pacman_packages/CSE_packages.txt" ]; then
+                gum_error  "Error: CSE_packages.txt not found in /root/LnOS/pacman_packages/. ."
+            else
+                # checking if cloned
+                if $CLONED ; then
+                    PACMAN_PACKAGES=$(cat /root/LnOS/scripts/pacman_packages/CSE_packages.txt)
+                else
+                    gum_error "Error: CSE_packages.txt not found in /root/LnOS/scripts/pacman_packages/."
+                    exit 1
+                fi
+            fi
+			# Choose packages from CSE list (PACMAN)
+            PACMAN_PACKAGES=$(cat /root/LnOS/pacman_packages/CSE_packages.txt)
+            gum spin --spinner dot --title "Installing pacman packages..." -- pacman -S --noconfirm "$PACMAN_PACKAGES" 
+
+            # AUR will most likely be short with a few packages
+            # webcord, brave are the big ones that come to mind
+            # the reason is id like to teach users how to properly use aur
+            gum style \
+                --foreground 255 --border-foreground 130 --border double \
+                --width 100 --margin "1 2" --padding "2 4" \
+                'AUR (Arch User Repository) is less secure because its not maintained by Arch.' \
+                'LnOS Maintainers picked these packages because their releases were signed with PGP keys' \
+            gum confirm "Will you proceed to download AUR packages ? (i.e. brave, webcord)" || return
+            
+            # clone paru and build
+            git clone https://aur.archlinux.org/paru.git
+            cd paru
+            makepkg -si
+            # exit and clean up paru
+            cd ..
+            rm -rf paru
+
+
+            gum_echo "Please review the packages you're about to download"
+            # check if we have the right packages
+            PARU_PACKAGES=$(cat /root/LnOS/paru_packages/paru_packages.txt)
+            if [ ! -f "/root/LnOS/paru_packages/paru_packages.txt" ]; then
+                gum_error  "Error: CSE_packages.txt not found in /root/LnOS/paru_packages/. ."
+            else
+                # checking if cloned
+                if $CLONED ; then
+                    PARU_PACKAGES=$(cat /root/LnOS/scripts/paru_packages/paru_packages.txt)
+                else
+                    gum_error "Error: CSE_packages.txt not found in /root/LnOS/scripts/paru_packages/."
+                    exit 1
+                fi
+            fi
+            paru -S "$PARU_PACKAGES"
+
+
+            ;;
+        "Custom")
+            PACMAN_PACKAGES=$(gum input --header "Enter the pacman packages you want (space-separated):")
+            if [ -n "$PACMAN_PACKAGES" ]; then
+                gum spin --spinner dot --title "Installing pacman packages..." -- pacman -S --noconfirm "$PACMAN_PACKAGES"
+            fi
+
+            gum_echo "AUR (Arch User Repository) is less secure because it's not maintained by Arch. LnOS Maintainers picked these packages because their releases were signed with PGP keys"
+            gum confirm "Will you proceed to download AUR packages ? (i.e. brave, webcord)" || return
+            
+            # clone paru and build
+            git clone https://aur.archlinux.org/paru.git
+            cd paru
+            makepkg -si
+            # exit and clean up paru
+            cd ..
+            rm -rf paru
+
+
+            gum_echo "Please enter and review the packages you're about to download"
+            PARU_PACKAGES=$(gum input --header "Enter the paru packages you want (space-seperated):")
+            if [ -n "$PARU_PACKAGES" ]; then
+                paru -S "$PARU_PACKAGES"
+            fi
+            
+            ;;
+    esac
 }
 
 # ---------------------------
@@ -476,6 +666,17 @@ configure_system(){
   setup_desktop_and_packages "$username"
 
   gok "Base system configured."
+
+    # Update 
+    pacman -Syu --noconfirm
+
+    
+    # setup the desktop environment
+    setup_desktop_and_packages "$username"
+
+	gum_echo "LnOS Basic DE/Package install completed!"
+
+    exit 0
 }
 
 # ---------------------------
@@ -590,6 +791,12 @@ install_x86_64(){
   chmod +x "$_payload"
   install -Dm755 "$_payload" "/mnt/$(basename "$_payload")"
 
+    # Install base system (zen kernel may be cool, but after some research about hardening, the linux hardened kernel makes 10x more sense for students and will be the default)
+    gum_echo "Installing base system, will take some time (Grab a coffee)"
+    pacstrap /mnt base linux-hardened linux-firmware btrfs-progs base-devel git wget networkmanager btrfs-progs openssh git dhcpcd networkmanager vi vim iw wget curl xdg-user-dirs
+
+    gum_echo "Base system install done!"
+
   # Configure inside chroot (noisy)
   LNOS_GUM=0 run_step "Configure system in chroot" \
     arch-chroot /mnt /bin/bash "/$(basename "$_payload")"
@@ -617,6 +824,28 @@ install_x86_64(){
     confirm "Reboot now?" && { umount -R /mnt || true; reboot; }
   else
     umount -R /mnt || true
+
+	# Chroot and configure the OS,
+	# before we enter chroot we also need to declare
+	# these bash functions as well so they can run
+    arch-chroot /mnt /bin/bash -c "$(declare -f configure_system setup_desktop_and_packages gum_echo gum_error gum_complete); configure_system"
+
+    # Cleanup and Install GRUB
+    if [ $UEFI -eq 1 ]; then
+        arch-chroot /mnt pacman -S --noconfirm grub efibootmgr
+        arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
+    else
+        arch-chroot /mnt pacman -S --noconfirm grub
+        arch-chroot /mnt grub-install --target=i386-pc $DISK
+    fi
+    arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
+
+    # Unmount and reboot
+    umount -R /mnt
+    for i in {10..1}; do
+        gum style --foreground 212 "Installation complete. Rebooting in $i seconds..."
+        sleep 1
+    done
     reboot
   fi
 }
