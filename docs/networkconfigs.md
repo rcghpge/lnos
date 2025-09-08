@@ -5,7 +5,7 @@ It covers both wired (Ethernet) and wireless (Wi-Fi) setups.
 
 ---
 
-## 1. See if the device shows up
+## 1. Check Network Devices
 
 Run:
 
@@ -13,7 +13,7 @@ Run:
 ip link
 ```
 
-## 2. Bring up the link manually
+## 2. Enable Network Interface with DHCP
 
 For wired:
 ```bash
@@ -26,7 +26,7 @@ For wireless:
 sudo ip link set wlp2s0 up
 ```
 
-## 3. If using Wi-Fi
+## 3. Wi-Fi Login Settings/Configurations
 
 Check available networks:
 ```bash
@@ -48,22 +48,31 @@ nmcli device wifi connect "eduroam" \
     --ask
 ```
 
-## 4. Verify internet
+## 4. Check Internet Connection
 
 ```bash
 ping -c 3 archlinux.org
 ```
 
-## 5. If no NIC shows up
+## 5.Network Card and Recommendations
 
-That usually means:
+If your system does not detect a network card (NIC), the most common reasons are:
 
-Missing driver module in `mkinitcpio.conf` or packages list (e.g. `r8168`, `iwlwifi)`.
+- Missing driver – The kernel may not include the correct driver for your hardware (e.g., Realtek r8168, Intel Wi-Fi iwlwifi).
 
-Sometimes needs firmware (`linux-firmware` should cover most cases — can add it in `packages.x86_64`/`packages.aarch64`).
+- Missing firmware – Some devices require additional firmware files. The linux-firmware package covers most cases.
+
+  - For custom builds, ensure linux-firmware is listed under packages.x86_64 or packages.aarch64.
+
+
+Recommendation:
+
+- Verify that your NIC is listed with ip link.
+
+- If no device appears, install or enable the appropriate driver and confirm linux-firmware is available.
 
 ## 6. LnOS @ UTA
 
-If all else fails for UTA students I recommend checking UTA OIT WiFi guidelines to connect to WiFi internet: https://oit.uta.edu/services/wireless-network/
+If all else fails for UTA students we recommend contacting the club or checking UTA OIT WiFi guidelines to connect to WiFi internet: https://oit.uta.edu/services/wireless-network/
 
 ---
