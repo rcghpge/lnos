@@ -51,7 +51,7 @@ nmcli device wifi connect "eduroam" \
 ## 4. Check Internet Connection
 
 ```bash
-ping -c 3 archlinux.org
+ping -c 3 ping.archlinux.org
 ```
 
 ## 5. Network Card and Recommendations
