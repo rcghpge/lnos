@@ -5,8 +5,8 @@
 ![GPG Signed](https://img.shields.io/badge/GPG-Signed-brightgreen?style=for-the-badge&logo=gnupg)
 ![Security Verified](https://img.shields.io/badge/Security-Verified-blue?style=for-the-badge&logo=shield)
 ![Integrity Guaranteed](https://img.shields.io/badge/Integrity-Guaranteed-orange?style=for-the-badge&logo=checkmarx)
-![Build Status](https://img.shields.io/github/actions/workflow/status/bakkertj/LnOS/build-iso.yml?style=for-the-badge&logo=github)
-![Latest Release](https://img.shields.io/github/v/release/bakkertj/LnOS?style=for-the-badge&logo=github)
+![Build Status](https://img.shields.io/github/actions/workflow/status/uta-lug-nuts/LnOS/build-iso.yml?style=for-the-badge&logo=github)
+![Latest Release](https://img.shields.io/github/v/release/uta-lug-nuts/LnOS?style=for-the-badge&logo=github)
 
 **🔒 All releases are cryptographically signed for authenticity and integrity**
 
@@ -69,10 +69,10 @@ Pre-built LnOS ISOs are available with the installer included.
 2. **Verify digital signature** (recommended):
    ```bash
    # Quick verification (auto-imports key)
-   curl -fsSL https://raw.githubusercontent.com/bakkertj/LnOS/main/scripts/verify-signature.sh | bash -s -- lnos-*.iso
+   curl -fsSL https://raw.githubusercontent.com/uta-lug-nuts/LnOS/main/scripts/verify-signature.sh | bash -s -- lnos-*.iso
    
    # Manual verification
-   curl -fsSL https://raw.githubusercontent.com/bakkertj/LnOS/main/keys/lnos-public-key.asc | gpg --import
+   curl -fsSL https://raw.githubusercontent.com/uta-lug-nuts/LnOS/main/keys/lnos-public-key.asc | gpg --import
    gpg --verify lnos-*.iso.asc lnos-*.iso
    ```
 
@@ -202,7 +202,7 @@ All LnOS releases are digitally signed with GPG to ensure authenticity and integ
 - Confirms files are from the official LnOS team
 - Prevents man-in-the-middle attacks
 
-**Public Key Location**: [keys/lnos-public-key.asc](https://github.com/bakkertj/LnOS/blob/main/keys/lnos-public-key.asc)
+**Public Key Location**: [keys/lnos-public-key.asc](https://github.com/uta-lug-nuts/LnOS/blob/main/keys/lnos-public-key.asc)
 
 ## Known Issues
 
