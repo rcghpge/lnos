@@ -73,6 +73,6 @@ Recommendation:
 
 ## 6. LnOS @ UTA
 
-If all else fails for UTA students we recommend contacting the club or checking UTA OIT WiFi guidelines to connect to WiFi internet: https://oit.uta.edu/services/wireless-network/
+If all else fails for UTA students we recommend contacting the club or checking UTA OIT WiFi wireless network page to connect to WiFi internet: https://oit.uta.edu/services/wireless-network/
 
 ---
