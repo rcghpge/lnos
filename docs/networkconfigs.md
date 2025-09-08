@@ -58,18 +58,18 @@ ping -c 3 archlinux.org
 
 If your system does not detect a network card (NIC), the most common reasons are:
 
-- Missing driver – The kernel may not include the correct driver for your hardware (e.g., Realtek r8168, Intel Wi-Fi iwlwifi).
+- Missing driver – The kernel may not include the correct driver for your hardware (e.g., Realtek `r8168`, Intel Wi-Fi `iwlwifi`).
 
 - Missing firmware – Some devices require additional firmware files. The linux-firmware package covers most cases.
 
-  - For custom builds, ensure linux-firmware is listed under packages.x86_64 or packages.aarch64.
+  - For custom builds, ensure `linux-firmware` is listed under `packages.x86_64` or `packages.aarch64`.
 
 
 Recommendation:
 
-- Verify that your NIC is listed with ip link.
+- Verify that your NIC is listed with `ip link`.
 
-- If no device appears, install or enable the appropriate driver and confirm linux-firmware is available.
+- If no device appears, install or enable the appropriate driver and confirm `linux-firmware` is available.
 
 ## 6. LnOS @ UTA
 
