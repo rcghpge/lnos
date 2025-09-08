@@ -54,7 +54,7 @@ nmcli device wifi connect "eduroam" \
 ping -c 3 archlinux.org
 ```
 
-## 5.Network Card and Recommendations
+## 5. Network Card and Recommendations
 
 If your system does not detect a network card (NIC), the most common reasons are:
 
