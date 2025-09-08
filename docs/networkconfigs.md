@@ -1,6 +1,6 @@
 # Network Configuration
 
-This is a guide for connecting to the internet on LnOS.  
+This is a guide for connecting to the internet on LnOS Arch.  
 It covers both wired (Ethernet) and wireless (Wi-Fi) setups.
 
 ---
