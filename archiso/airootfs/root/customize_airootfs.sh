@@ -25,6 +25,7 @@ symlink_enable() { # symlink_enable <unit>
 }
 
 symlink_disable() { # symlink_disable <unit>
+  local unit="$1"
   rm -f "/etc/systemd/system/multi-user.target.wants/$unit" 2>/dev/null || true
   log "disabled: $unit"
 }
