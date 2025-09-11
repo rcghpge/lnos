@@ -141,9 +141,6 @@ setup_desktop_and_packages()
         gum confirm "You selected: $THEME. Proceed with installation?" && break
     done
 
-    # Ensure base-devel is installed for AUR package building
-  	gum spin --spinner dot --title "Installing developer tools needed for packages" -- pacman -S --noconfirm base-devel
-
     case "$THEME" in
         "CSE")
             # ensure we have the right packages
@@ -226,6 +223,11 @@ setup_desktop_and_packages()
             
             ;;
     esac
+
+    # make basic user directories
+    cd ~
+    mkdir Downloads Pictures Videos Music Documents Public Desktop
+    chown "$username:$username" Downloads Pictures Videos Music Documents Public Desktop 
 }
 
 # Function to configure the system (common for both architectures)
@@ -297,11 +299,6 @@ configure_system()
 
     # Update 
     pacman -Syu --noconfirm
-    pacman -S --noconfirm btrfs-progs openssh git dhcpcd networkmanager vi vim iw netcl wget curl xdg-user-dirs
-
-    # Enable network services
-    systemctl enable dhcpcd
-    systemctl enable NetworkManager
 
     
     # setup the desktop environment
