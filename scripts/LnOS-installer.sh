@@ -127,7 +127,7 @@ setup_desktop_and_packages()
             wget https://raw.githubusercontent.com/JaKooLit/Arch-Hyprland/main/auto-install.sh
         
             ;;
-		"DWM(Similar to Hyprland)")
+		"DWM(similar to Hyprland)")
             gum_echo "Installing DWM..."
 			gum_echo "[WARNING] DWM requires more work in the future, for now this option doesn't do anything"
             #pacman -S --noconfirm uwsm
@@ -137,9 +137,17 @@ setup_desktop_and_packages()
 
     # Package Installation
     while true; do
-        THEME=$(gum choose --header "Choose your installation profile:" "CSE" "Custom")
+        THEME=$(gum choose --header "Choose your installation Profile:" "CSE" "Custom")
         gum confirm "You selected: $THEME. Proceed with installation?" && break
     done
+
+    # Ensure base-devel is installed for AUR package building
+  	gum spin --spinner dot --title "Installing developer tools needed for packages" -- pacman -S --noconfirm base-devel
+
+    # Create a temporary directory for AUR package building
+    # AUR_DIR="/tmp/aur_build"
+    # mkdir -p "$AUR_DIR"
+    # chown "$username" "$AUR_DIR"
 
     case "$THEME" in
         "CSE")
@@ -156,7 +164,7 @@ setup_desktop_and_packages()
                     exit 1
                 fi
             fi
-			# Choose packages from CSE list (PACMAN)
+	    # Choose packages from CSE list (PACMAN)
             PACMAN_PACKAGES=$(cat /root/LnOS/pacman_packages/CSE_packages.txt)
             gum spin --spinner dot --title "Installing pacman packages..." -- pacman -S --noconfirm "$PACMAN_PACKAGES" 
 
@@ -294,6 +302,11 @@ configure_system()
 
     # Update 
     pacman -Syu --noconfirm
+    pacman -S --noconfirm btrfs-progs openssh git dhcpcd networkmanager vi vim iw netcl wget curl xdg-user-dirs
+
+    # Enable network services
+    systemctl enable dhcpcd
+    systemctl enable NetworkManager
 
     
     # setup the desktop environment
@@ -541,6 +554,8 @@ prepare_arm()
     umount -R /mnt
     gum style --border normal --margin "1" --padding "1" --border-foreground 212 "SD card preparation complete. Insert into Raspberry Pi and boot."
 }
+
+setup_desktop_and_packages
 
 # Main logic
 if [ "$1" = "--target=x86_64" ]; then

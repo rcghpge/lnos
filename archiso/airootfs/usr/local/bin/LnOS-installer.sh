@@ -26,7 +26,6 @@
 
 set -e
 
-<<<<<<< HEAD
 # Prechecks for users that are cloning the install script to run in the archinstaller iso and not the lnos iso
 # the package paths are different on clones
 if cat /root/LnOS/pacman_packages/CSE_packages.txt | grep git -q ; then
@@ -39,22 +38,17 @@ fi
 # init pacman key
 pacman-key --init
 
-=======
->>>>>>> 911a0ed (fix: force user to connect to internet)
 if ! command -v gum &> /dev/null; then
     echo "Installing gum..."
     pacman -Sy --noconfirm gum
 fi
 
-<<<<<<< HEAD
 if ! command -v nmtui &> /dev/null; then
     echo "Installing network manager..."
     pacman -Sy --noconfirm networkmanager
     NetworkManager
 fi
 
-=======
->>>>>>> 911a0ed (fix: force user to connect to internet)
 # logging functions (only for 1 line)
 gum_echo()
 {
@@ -69,19 +63,11 @@ gum_complete()
     gum style --border normal --margin "1 2" --padding "2 4" --border-foreground 158 "$@"
 }
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 911a0ed (fix: force user to connect to internet)
 # Make user connect to internet
 # make it a bit simpler and just force nmtui on them
 echo "Please connect to the internet"
 
-<<<<<<< HEAD
 gum_echo "Connect to the internet? (Installer won't work without it)"
-=======
-gum_echo "connect to the internet? (installer wont work without it)"
->>>>>>> 911a0ed (fix: force user to connect to internet)
 gum confirm || exit
 
 nmtui
@@ -105,7 +91,6 @@ setup_desktop_and_packages()
     # Desktop Environment Installation
     while true; do
 		DE_CHOICE=$(gum choose --header "Choose your Desktop Environment (DE):" \
-<<<<<<< HEAD
             "Gnome(Good for beginners, similar to Mac)" \
             "KDE(Good for beginners, similar to Windows)" \
             "Hyprland(Tiling WM, basic dotfiles but requires more DIY)" \
@@ -113,15 +98,6 @@ setup_desktop_and_packages()
             "TTY (No install required)")
             
 		if [[ "$DE_CHOICE" == "TTY (No install required)" ]]; then
-=======
-            "Gnome(good for beginners, similar to mac)" \
-            "KDE(good for beginners, similar to windows)" \
-            "Hyprland(Tiling WM, basic dotfiles but requires more DIY)" \
-            "DWM(similar to Hyprland)" \
-            "TTY (no install required)")
-            
-		if [[ "$DE_CHOICE" == "TTY (no install required)" ]]; then
->>>>>>> 911a0ed (fix: force user to connect to internet)
 			echo "TTY is preinstalled !"
             break
         fi
@@ -165,8 +141,6 @@ setup_desktop_and_packages()
         gum confirm "You selected: $THEME. Proceed with installation?" && break
     done
 
-<<<<<<< HEAD
-=======
     # Ensure base-devel is installed for AUR package building
   	gum spin --spinner dot --title "Installing developer tools needed for packages" -- pacman -S --noconfirm base-devel
 
@@ -175,7 +149,6 @@ setup_desktop_and_packages()
     # mkdir -p "$AUR_DIR"
     # chown "$username" "$AUR_DIR"
 
->>>>>>> 911a0ed (fix: force user to connect to internet)
     case "$THEME" in
         "CSE")
             # ensure we have the right packages
@@ -191,11 +164,10 @@ setup_desktop_and_packages()
                     exit 1
                 fi
             fi
-			# Choose packages from CSE list (PACMAN)
+	    # Choose packages from CSE list (PACMAN)
             PACMAN_PACKAGES=$(cat /root/LnOS/pacman_packages/CSE_packages.txt)
             gum spin --spinner dot --title "Installing pacman packages..." -- pacman -S --noconfirm "$PACMAN_PACKAGES" 
 
-<<<<<<< HEAD
             # AUR will most likely be short with a few packages
             # webcord, brave are the big ones that come to mind
             # the reason is id like to teach users how to properly use aur
@@ -228,13 +200,6 @@ setup_desktop_and_packages()
                     gum_error "Error: CSE_packages.txt not found in /root/LnOS/scripts/paru_packages/."
                     exit 1
                 fi
-=======
-			# Choose packages from CSE list (PACMAN)
-            PACMAN_PACKAGES=$(cat /root/LnOS/pacman_packages/CSE_packages.txt | gum choose --no-limit --header "Select Pacman Packages to Install:")
-            PACMAN_PACKAGES=$(echo "$PACMAN_PACKAGES" | tr '\n' ' ')
-            if [ -n "$PACMAN_PACKAGES" ]; then
-                gum spin --spinner dot --title "Installing pacman packages..." -- pacman -S --noconfirm $PACMAN_PACKAGES
->>>>>>> 911a0ed (fix: force user to connect to internet)
             fi
             paru -S "$PARU_PACKAGES"
 
@@ -337,6 +302,11 @@ configure_system()
 
     # Update 
     pacman -Syu --noconfirm
+    pacman -S --noconfirm btrfs-progs openssh git dhcpcd networkmanager vi vim iw netcl wget curl xdg-user-dirs
+
+    # Enable network services
+    systemctl enable dhcpcd
+    systemctl enable NetworkManager
 
     
     # setup the desktop environment
@@ -514,15 +484,10 @@ install_x86_64()
 
     # Unmount and reboot
     umount -R /mnt
-<<<<<<< HEAD
     for i in {10..1}; do
         gum style --foreground 212 "Installation complete. Rebooting in $i seconds..."
         sleep 1
     done
-=======
-    gum_complete "Installation complete. Rebooting in 10 seconds..."
-		sleep 10
->>>>>>> 911a0ed (fix: force user to connect to internet)
     reboot
 }
 
