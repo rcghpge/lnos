@@ -144,11 +144,6 @@ setup_desktop_and_packages()
     # Ensure base-devel is installed for AUR package building
   	gum spin --spinner dot --title "Installing developer tools needed for packages" -- pacman -S --noconfirm base-devel
 
-    # Create a temporary directory for AUR package building
-    # AUR_DIR="/tmp/aur_build"
-    # mkdir -p "$AUR_DIR"
-    # chown "$username" "$AUR_DIR"
-
     case "$THEME" in
         "CSE")
             # ensure we have the right packages
