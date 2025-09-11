@@ -223,11 +223,6 @@ setup_desktop_and_packages()
             
             ;;
     esac
-
-    # make basic user directories
-    cd ~
-    mkdir Downloads Pictures Videos Music Documents Public Desktop
-    chown "$username:$username" Downloads Pictures Videos Music Documents Public Desktop 
 }
 
 # Function to configure the system (common for both architectures)
