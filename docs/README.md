@@ -5,15 +5,15 @@
 ![GPG Signed](https://img.shields.io/badge/GPG-Signed-brightgreen?style=for-the-badge&logo=gnupg)
 ![Security Verified](https://img.shields.io/badge/Security-Verified-blue?style=for-the-badge&logo=shield)
 ![Integrity Guaranteed](https://img.shields.io/badge/Integrity-Guaranteed-orange?style=for-the-badge&logo=checkmarx)
-![Build Status](https://img.shields.io/github/actions/workflow/status/bakkertj/LnOS/build-iso.yml?style=for-the-badge&logo=github)
-![Latest Release](https://img.shields.io/github/v/release/bakkertj/LnOS?style=for-the-badge&logo=github)
+![Build Status](https://img.shields.io/github/actions/workflow/status/uta-lug-nuts/LnOS/build-iso.yml?style=for-the-badge&logo=github)
+![Latest Release](https://img.shields.io/github/v/release/uta-lug-nuts/LnOS?style=for-the-badge&logo=github)
 
 **🔒 All releases are cryptographically signed for authenticity and integrity**
 
 "A UTA flavored distro with all the applications and tools the different engineering majors use" - Professor Bakker
 
 ## Overview
-The-LN-Project is a custom Linux distribution based on Arch Linux, designed specifically for University of Texas at Arlington (UTA) students. It aims to provide a lightweight, flexible, and powerful environment tailored to the needs of engineering students.The distro supports both x86_64 and ARM architectures (e.g., Raspberry Pi), ensuring compatibility with a wide range of student hardware.
+The-LN-Project is a custom Linux distribution based on Arch Linux, designed specifically for University of Texas at Arlington (UTA) students. It aims to provide a lightweight, flexible, and powerful environment tailored to the needs of engineering students. The distro supports both x86_64 and ARM architectures (e.g., Raspberry Pi), ensuring compatibility with a wide range of student hardware.
 
 * First focused discipline is Computer Science (CS). 
 
@@ -22,8 +22,8 @@ The-LN-Project is a custom Linux distribution based on Arch Linux, designed spec
 * Lightweight and minimal base, built from Arch Linux.
 * Pre-configured tools for CS students, with plans to expand to other engineering disciplines (e.g., EE).
 * Easy installation process for students new to Linux.
-* Rolling updates to keep software current. (tool to update easily TUI)
-* Easy to read Documentation source not only for LnOS but for any configurable tool thats on Arch Linux
+* Rolling updates to keep software current. (TUI tool to easily update)
+* Easy to read Documentation source not only for LnOS but for any configurable tool thats on Arch Linux.
 
 ## Want to request a feature or report a bug, open an Issue!
 * [Github issues](https://github.com/uta-lug-nuts/LnOS/issues)
@@ -37,7 +37,7 @@ We welcome contributions from UTA students, faculty and the FOSS Community!
 
 ### Testing / Developers Guide
 
-Click here to see guide on testing: [Testing](testing.md)
+Click here to see guide on testing: [Testing](https://github.com/uta-lug-nuts/LnOS/wiki/testing)
 (helpful when contributing)
 
 ## Features
@@ -46,8 +46,8 @@ Click here to see guide on testing: [Testing](testing.md)
   * Arm we're still researching (v7 or v8)
 * **Base System:** Minimal Arch Linux with a rolling release model.
 * **Major Themed presets:** Engineers will have preset options to choose  
-* **Desktop Environment:** [Gnome](https://www.gnome.org/)(similar to macos) [KDE](https://kde.org/)(similar to windows) and Tiling Window Managers like [Hyprland](https://hypr.land/), and [DWM](https://dwm.suckless.org/).
-  * To learn more about Tiling Window Managers [click here](tilingWM.md)
+* **Desktop Environment:** [GNOME](https://www.gnome.org/)(similar to macos) [KDE Plasma](https://kde.org/)(similar to windows) and Tiling Window Managers like [Hyprland](https://hypr.land/), and [DWM](https://dwm.suckless.org/).
+  * To learn more about Tiling Window Managers [click here](https://github.com/uta-lug-nuts/LnOS/wiki/tilingWM)
 * Documentation: Guides and support for UTA students on installation and customization of tools.
 
 
@@ -69,10 +69,10 @@ Pre-built LnOS ISOs are available with the installer included.
 2. **Verify digital signature** (recommended):
    ```bash
    # Quick verification (auto-imports key)
-   curl -fsSL https://raw.githubusercontent.com/bakkertj/LnOS/main/scripts/verify-signature.sh | bash -s -- lnos-*.iso
+   curl -fsSL https://raw.githubusercontent.com/uta-lug-nuts/LnOS/main/scripts/verify-signature.sh | bash -s -- lnos-*.iso
    
    # Manual verification
-   curl -fsSL https://raw.githubusercontent.com/bakkertj/LnOS/main/keys/lnos-public-key.asc | gpg --import
+   curl -fsSL https://raw.githubusercontent.com/uta-lug-nuts/LnOS/main/keys/lnos-public-key.asc | gpg --import
    gpg --verify lnos-*.iso.asc lnos-*.iso
    ```
 
@@ -202,7 +202,7 @@ All LnOS releases are digitally signed with GPG to ensure authenticity and integ
 - Confirms files are from the official LnOS team
 - Prevents man-in-the-middle attacks
 
-**Public Key Location**: [keys/lnos-public-key.asc](https://github.com/bakkertj/LnOS/blob/main/keys/lnos-public-key.asc)
+**Public Key Location**: [keys/lnos-public-key.asc](https://github.com/uta-lug-nuts/LnOS/blob/main/keys/lnos-public-key.asc)
 
 ## Known Issues
 
