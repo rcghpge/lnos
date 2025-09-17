@@ -702,7 +702,7 @@ install_packages() {
             
             # Install AUR packages if AUR helper is available
             if [ -n "$LNOS_AUR_HELPER" ] && [ "$LNOS_AUR_HELPER" != "none" ]; then
-                local aur_packages=(brave-bin discord)
+                local aur_packages=(brave-bin)
                 arch-chroot /mnt /usr/bin/runuser -u "$LNOS_USERNAME" -- "$LNOS_AUR_HELPER" -S --noconfirm "${aur_packages[@]}"
             fi
             ;;
