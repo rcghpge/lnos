@@ -44,7 +44,7 @@ COLOR_PURPLE=13 #  #ff00ff
 COLOR_CYAN=14   #  #00ffff
 COLOR_WHITE=15  #  #ffffff
 
-COLOR_FOREGROUND="${COLOR_BLUE}"
+COLOR_FOREGROUND="${COLOR_YELLOW}"
 COLOR_BACKGROUND="${COLOR_WHITE}"
 
 # Configuration variables
@@ -766,8 +766,6 @@ main() {
         pacman -Sy --noconfirm gum
     fi
     
-    # Check prerequisites
-    [ "$(cat /proc/sys/kernel/hostname)" != "archiso" ] && log_fail "Must be run from Arch ISO!" && exit 1
     
     # Print version to logfile
     log_info "LnOS Installer ${VERSION}"
