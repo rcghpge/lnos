@@ -8,13 +8,14 @@ iso_version="$(date +%Y.%m.%d)"
 install_dir="arch"
 buildmodes=('iso')
 esp_size_mb="128"
-bootmodes=('bios.syslinux.mbr' 'bios.syslinux.eltorito'
-           'uefi-ia32.grub.esp' 'uefi-x64.grub.esp'
+bootmodes=('bios.syslinux.mbr' 'bios.syslinux.eltorito' 
+           'uefi-ia32.grub.esp' 'uefi-x64.grub.esp' 
            'uefi-ia32.grub.eltorito' 'uefi-x64.grub.eltorito')
 arch="x86_64"
 pacman_conf="pacman.conf"
 airootfs_image_type="squashfs"
 airootfs_image_tool_options=('-comp' 'xz' '-Xdict-size' '75%' '-b' '1M')
+declare -Ag file_permissions
 file_permissions=(
   ["/root"]="0:0:750"
   ["/root/.bashrc"]="0:0:644"
@@ -32,3 +33,20 @@ file_permissions=(
   ["/autorun.inf"]="0:0:644"
   ["/README.txt"]="0:0:644"
 )
+
+# --- Fallbacks ---
+unset -v bootmodes
+bootmodes=('bios.syslinux' 'uefi.grub')
+
+_clean=()
+for m in "${bootmodes[@]}"; do
+  m="${m//$'\r'/}"
+  m="${m#"${m%%[![:space:]]*}"}"
+  m="${m%"${m##*[![:space:]]}"}"
+  [[ -n "$m" ]] && _clean+=("$m")
+done
+bootmodes=("${_clean[@]}")
+unset _clean
+
+# Debug checks
+for m in "${bootmodes[@]}"; do printf 'BOOTMODE=<%s>\n' "$m" >&2; done
