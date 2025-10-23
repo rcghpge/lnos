@@ -537,49 +537,62 @@ configure_system() {
 }
 
 install_bootloader() {
-    gum_info "Installing bootloader..."
+    gum_info "Installing bootloader with Secure Boot support..."
     
     local kernel_args=('rw' 'init=/usr/lib/systemd/systemd')
     [ "$LNOS_ENCRYPTION_ENABLED" = "true" ] && kernel_args+=("rd.luks.name=$(blkid -s UUID -o value "${LNOS_ROOT_PARTITION}")=cryptroot" "root=/dev/mapper/cryptroot") || kernel_args+=("root=PARTUUID=$(lsblk -dno PARTUUID "${LNOS_ROOT_PARTITION}")")
     
-    if [ "$LNOS_BOOTLOADER" = "grub" ]; then
-        sed -i "\,^GRUB_CMDLINE_LINUX=\"\",s,\",&${kernel_args[*]}," /mnt/etc/default/grub
-        
-        if [ "$BOOT_MODE" = "uefi" ]; then
-            arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
-        else
-            arch-chroot /mnt grub-install --target=i386-pc "$LNOS_DISK"
-        fi
-        
-        arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
-    else
-        # systemd-boot only works with UEFI
-        if [ "$BOOT_MODE" = "bios" ]; then
-            gum_warn "systemd-boot only supports UEFI. Falling back to GRUB for BIOS systems."
-            # Install GRUB as fallback
-            arch-chroot /mnt pacman -S --noconfirm grub
-            sed -i "\,^GRUB_CMDLINE_LINUX=\"\",s,\",&${kernel_args[*]}," /mnt/etc/default/grub
-            arch-chroot /mnt grub-install --target=i386-pc "$LNOS_DISK"
-            arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
-        else
-            arch-chroot /mnt bootctl --esp-path=/boot install
-            {
-                echo 'default main.conf'
-                echo 'console-mode auto'
-                echo 'timeout 0'
-                echo 'editor yes'
-            } > /mnt/boot/loader/loader.conf
-            
-            {
-                echo 'title   LnOS'
-                echo 'linux   /vmlinuz-linux-hardened'
-                echo 'initrd  /initramfs-linux-hardened.img'
-                echo "options ${kernel_args[*]}"
-            } > /mnt/boot/loader/entries/main.conf
-        fi
-    fi
-    
-    gum_info "Bootloader installed"
+		if [ "$LNOS_BOOTLOADER" = "systemd" ]; then 
+
+			# bios falls back to grub 
+			if [ "$BOOT_MODE" = "bios" ]; then 
+				if [ "$LNOS_BOOTLOADER" = "grub" ]; then
+						sed -i "\,^GRUB_CMDLINE_LINUX=\"\",s,\",&${kernel_args[*]}," /mnt/etc/default/grub
+						gum_warn "systemd-boot only supports UEFI. Falling back to GRUB for BIOS systems."
+						# Install GRUB as fallback
+						arch-chroot /mnt pacman -S --noconfirm grub
+						sed -i "\,^GRUB_CMDLINE_LINUX=\"\",s,\",&${kernel_args[*]}," /mnt/etc/default/grub
+						arch-chroot /mnt grub-install --target=i386-pc "$LNOS_DISK"
+						arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
+				fi
+
+				# install systemd boot 
+				arch-chroot /mnt pacman -S --noconfirm sbctl 
+				arch-chroot /mnt bootctl --esp-path=/boot install 
+
+				# config loader 
+				{
+					echo 'default main.conf'
+					echo 'console-mode auto'
+					echo 'timeout 0'
+					echo 'editor no' 
+				} > /mnt/boot/loader/loader.conf 
+
+				# config boot entry 
+				{
+					echo 'title   LnOS'
+					echo 'linux   /vmlinuz-linux-hardened'
+					echo 'initrd  /initramfs-linux-hardened.img'
+					echo "options ${kernel_args[*]}"
+				} > /mnt/boot/loader/entries/main.conf
+
+				# Set up Secure Boot
+        gum_info "Configuring Secure Boot..."
+        arch-chroot /mnt sbctl create-keys
+        arch-chroot /mnt sbctl enroll-keys
+        arch-chroot /mnt sbctl sign -s /boot/vmlinuz-linux-hardened
+        arch-chroot /mnt sbctl sign -s /boot/initramfs-linux-hardened.img
+        arch-chroot /mnt sbctl sign -s /boot/loader/loader.conf
+        arch-chroot /mnt sbctl sign -s /boot/loader/entries/main.conf
+
+				gum_info "Secure Boot configured with systemd-boot"
+
+			else 
+				gum_fail "ERR unkown bootloader ?"
+				exit 1 
+			fi 
+
+			gum_info "Bootloader installed"
 }
 
 install_desktop_environment() {
