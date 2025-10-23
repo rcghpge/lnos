@@ -68,8 +68,10 @@ docker-compose.override.yml
 coverage/
 .coverage
 .pytest_cache/
+*.bak
 
 # GPG private keys (security) - but allow public keys in keys/ directory
+.gnupg/
 *.gpg
 *private*.asc
 *secret*.asc
