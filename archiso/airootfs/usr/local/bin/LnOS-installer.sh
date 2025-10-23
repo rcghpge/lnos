@@ -44,7 +44,7 @@ COLOR_PURPLE=13 #  #ff00ff
 COLOR_CYAN=14   #  #00ffff
 COLOR_WHITE=15  #  #ffffff
 
-COLOR_FOREGROUND="${COLOR_YELLOW}"
+COLOR_FOREGROUND="${COLOR_BLUE}"
 COLOR_BACKGROUND="${COLOR_WHITE}"
 
 # Configuration variables
@@ -159,7 +159,14 @@ print_header() {
  ░███        ░███ ░███ ░███      ░███ ░░░░░░░░███
  ░███      █ ░███ ░███ ░░███     ███  ███    ░███
  ███████████ ████ █████ ░░░███████░  ░░█████████ 
-░░░░░░░░░░░ ░░░░ ░░░░░    ░░░░░░░     ░░░░░░░░░  '
+░░░░░░░░░░░ ░░░░ ░░░░░    ░░░░░░░     ░░░░░░░░░  
+
+:::  ===  === :::====  :::====  :::  === :::===  :::  === :::====  :::==== 
+:::  ===  === :::  === :::  === ::: ===  :::     :::  === :::  === :::  ===
+===  ===  === ===  === =======  ======    =====  ======== ===  === ======= 
+ ===========  ===  === === ===  === ===      === ===  === ===  === ===     
+  ==== ====    ======  ===  === ===  === ======  ===  ===  ======  ===     
+'
     local header_version="               v. ${VERSION}"
     gum_white --margin "1 0" --align left --bold "Welcome to ${title} ${header_version}"
     return 0
