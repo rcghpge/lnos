@@ -44,7 +44,7 @@ COLOR_PURPLE=13 #  #ff00ff
 COLOR_CYAN=14   #  #00ffff
 COLOR_WHITE=15  #  #ffffff
 
-COLOR_FOREGROUND="${COLOR_YELLOW}"
+COLOR_FOREGROUND="${COLOR_BLUE}"
 COLOR_BACKGROUND="${COLOR_WHITE}"
 
 # Configuration variables
@@ -159,7 +159,14 @@ print_header() {
  ░███        ░███ ░███ ░███      ░███ ░░░░░░░░███
  ░███      █ ░███ ░███ ░░███     ███  ███    ░███
  ███████████ ████ █████ ░░░███████░  ░░█████████ 
-░░░░░░░░░░░ ░░░░ ░░░░░    ░░░░░░░     ░░░░░░░░░  '
+░░░░░░░░░░░ ░░░░ ░░░░░    ░░░░░░░     ░░░░░░░░░  
+
+:::  ===  === :::====  :::====  :::  === :::===  :::  === :::====  :::==== 
+:::  ===  === :::  === :::  === ::: ===  :::     :::  === :::  === :::  ===
+===  ===  === ===  === =======  ======    =====  ======== ===  === ======= 
+ ===========  ===  === === ===  === ===      === ===  === ===  === ===     
+  ==== ====    ======  ===  === ===  === ======  ===  ===  ======  ===     
+'
     local header_version="               v. ${VERSION}"
     gum_white --margin "1 0" --align left --bold "Welcome to ${title} ${header_version}"
     return 0
@@ -308,11 +315,7 @@ select_disk() {
 
 select_filesystem() {
     if [ -z "$LNOS_FILESYSTEM" ]; then
-        local user_input options
-        options=("btrfs" "ext4")
-        user_input=$(gum_choose --header "+ Choose Filesystem (snapshot support: btrfs)" "${options[@]}") || trap_gum_exit_confirm
-        [ -z "$user_input" ] && return 1
-        LNOS_FILESYSTEM="$user_input" && properties_generate
+        LNOS_FILESYSTEM="btrfs" && properties_generate
     fi
     gum_property "Filesystem" "${LNOS_FILESYSTEM}"
     return 0
@@ -332,13 +335,7 @@ select_bootloader() {
 
 select_enable_encryption() {
     if [ -z "$LNOS_ENCRYPTION_ENABLED" ]; then
-        gum_confirm "Enable Disk Encryption?"
-        local user_confirm=$?
-        [ $user_confirm = 130 ] && { trap_gum_exit_confirm; return 1; }
-        local user_input
-        [ $user_confirm = 1 ] && user_input="false"
-        [ $user_confirm = 0 ] && user_input="true"
-        LNOS_ENCRYPTION_ENABLED="$user_input" && properties_generate
+        LNOS_ENCRYPTION_ENABLED="true" && properties_generate
     fi
     gum_property "Disk Encryption" "$LNOS_ENCRYPTION_ENABLED"
     return 0
@@ -686,16 +683,26 @@ install_packages() {
             # Essential development tools for computer science students
             local packages=(
                 # Development tools
-                vim nano git wget curl
+                neovim vim nano git lazygit wget curl 
+								base-devel binutils coreutils docker 
+								lazydocker gh 
                 # Programming languages and tools  
                 gcc clang make cmake gdb valgrind
-                python python-pip nodejs npm
+                python node npm llvm lld bear qt6-base
                 # Text editors and IDEs
-                code # VSCode from official repos
+                code obsidian 
                 # System utilities
-                htop tree unzip zip
+                btop fastfetch htop tree unzip zip 
+								jq cowsay bzip2 cava bat arch-audit 
+								man mandb man-pages tldr strace fzf
                 # Network tools
                 openssh
+								# video
+								mpv obs-studio 
+								# audio
+								spotify-launcher 
+								# messaging
+								signal-desktop
             )
             
             arch-chroot /mnt pacman -S --noconfirm "${packages[@]}"
