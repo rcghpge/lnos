@@ -161,11 +161,6 @@ print_header() {
  ███████████ ████ █████ ░░░███████░  ░░█████████ 
 ░░░░░░░░░░░ ░░░░ ░░░░░    ░░░░░░░     ░░░░░░░░░  
 
-:::  ===  === :::====  :::====  :::  === :::===  :::  === :::====  :::==== 
-:::  ===  === :::  === :::  === ::: ===  :::     :::  === :::  === :::  ===
-===  ===  === ===  === =======  ======    =====  ======== ===  === ======= 
- ===========  ===  === === ===  === ===      === ===  === ===  === ===     
-  ==== ====    ======  ===  === ===  === ======  ===  ===  ======  ===     
 '
     local header_version="               v. ${VERSION}"
     gum_white --margin "1 0" --align left --bold "Welcome to ${title} ${header_version}"
@@ -690,33 +685,29 @@ install_aur_helper() {
 
 install_packages() {
     gum_info "Installing packages based on profile: $LNOS_PACKAGE_PROFILE"
+
+		# default packages 
+		local packages=(
+			vim nano git wget curl base-devel binutils coreutils  
+			dolphin btop htop tree unzip zip jq cowsay bzip2 
+			cava bat arch-audit man mandb man-pages tldr strace fzf
+			openssh mpv spotify-launcher signal-desktop
+			
+		)
     
     case "$LNOS_PACKAGE_PROFILE" in
         "CSE")
             # Essential development tools for computer science students
-            local packages=(
-                # Development tools
-                neovim vim nano git lazygit wget curl 
-								base-devel binutils coreutils docker 
-								lazydocker gh 
-                # Programming languages and tools  
-                gcc clang make cmake gdb valgrind
-                python node npm llvm lld bear qt6-base
-                # Text editors and IDEs
-                code obsidian 
-                # System utilities
-                btop fastfetch htop tree unzip zip 
-								jq cowsay bzip2 cava bat arch-audit 
-								man mandb man-pages tldr strace fzf
-                # Network tools
-                openssh
-								# video
-								mpv obs-studio 
-								# audio
-								spotify-launcher 
-								# messaging
-								signal-desktop
-            )
+						# get the text from pacman-packages/CSE_packages.txt  
+						local file_packages=()
+
+						if [[ -f "./pacman-packages/CSE_packages.txt" ]]; then
+								# note mapfile OVERWRITES arrays which is why we have 2 
+								mapfile -t file_packages < "./pacman-packages/CSE_packages.txt"
+						fi
+
+						# Append the file's packages to the original array
+						packages+=("${file_packages[@]}")
             
             arch-chroot /mnt pacman -S --noconfirm "${packages[@]}"
             
@@ -725,14 +716,57 @@ install_packages() {
                 local aur_packages=(brave-bin)
                 arch-chroot /mnt /usr/bin/runuser -u "$LNOS_USERNAME" -- "$LNOS_AUR_HELPER" -S --noconfirm "${aur_packages[@]}"
             fi
+
+            ;;
+        "SWE")
+					  # basically a CS clone
+						local file_packages=()
+
+						if [[ -f "./pacman-packages/SWE_packages.txt" ]]; then
+								# note mapfile OVERWRITES arrays which is why we have 2 
+								mapfile -t file_packages < "./pacman-packages/SWE_packages.txt"
+						fi
+
+						# Append the file's packages to the original array
+						packages+=("${file_packages[@]}")
+            
+            arch-chroot /mnt pacman -S --noconfirm "${packages[@]}"
+            
+            # Install AUR packages if AUR helper is available
+            if [ -n "$LNOS_AUR_HELPER" ] && [ "$LNOS_AUR_HELPER" != "none" ]; then
+                local aur_packages=(brave-bin)
+                arch-chroot /mnt /usr/bin/runuser -u "$LNOS_USERNAME" -- "$LNOS_AUR_HELPER" -S --noconfirm "${aur_packages[@]}"
+            fi
+
+            ;;
+        "CPE")
+						# Computer Engineers
+						local file_packages=()
+
+						if [[ -f "./pacman-packages/CPE_packages.txt" ]]; then
+								# note mapfile OVERWRITES arrays which is why we have 2 
+								mapfile -t file_packages < "./pacman-packages/CPE_packages.txt"
+						fi
+
+						# Append the file's packages to the original array
+						packages+=("${file_packages[@]}")
+            
+            arch-chroot /mnt pacman -S --noconfirm "${packages[@]}"
+            
+            # Install AUR packages if AUR helper is available
+            if [ -n "$LNOS_AUR_HELPER" ] && [ "$LNOS_AUR_HELPER" != "none" ]; then
+                local aur_packages=(brave-bin)
+                arch-chroot /mnt /usr/bin/runuser -u "$LNOS_USERNAME" -- "$LNOS_AUR_HELPER" -S --noconfirm "${aur_packages[@]}"
+            fi
+
             ;;
         "Custom")
             gum_info "Custom package installation - user will be prompted"
             # This would be handled in the interactive part
             ;;
         "Minimal")
-            local packages=(vim git wget curl openssh)
-            arch-chroot /mnt pacman -S --noconfirm "${packages[@]}"
+            local min_packages=(vim git wget curl openssh)
+            arch-chroot /mnt pacman -S --noconfirm "${min_packages[@]}"
             ;;
     esac
     
