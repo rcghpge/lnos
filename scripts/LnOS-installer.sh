@@ -393,7 +393,7 @@ select_enable_aur() {
 select_package_profile() {
     if [ -z "$LNOS_PACKAGE_PROFILE" ]; then
         local user_input options
-        options=("CSE" "Custom" "Minimal")
+        options=("CSE" "SWE" "CPE" "Custom" "Minimal")
         user_input=$(gum_choose --header "+ Choose Package Profile" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1
         LNOS_PACKAGE_PROFILE="$user_input" && properties_generate
@@ -588,6 +588,7 @@ install_bootloader() {
 			fi 
 
 			gum_info "Bootloader installed"
+	fi
 }
 
 install_desktop_environment() {
@@ -690,7 +691,7 @@ install_packages() {
 		local packages=(
 			vim nano git wget curl base-devel binutils coreutils  
 			dolphin btop htop tree unzip zip jq cowsay bzip2 
-			cava bat arch-audit man mandb man-pages tldr strace fzf
+			cava bat arch-audit man man-pages tldr strace fzf
 			openssh mpv spotify-launcher signal-desktop
 			
 		)
