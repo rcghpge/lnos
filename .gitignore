@@ -10,6 +10,8 @@ work/
 /tmp/archiso-tmp/
 
 # Build directories and cache
+vm/
+test/
 build/
 dist/
 cache/

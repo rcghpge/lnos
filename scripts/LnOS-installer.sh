@@ -761,19 +761,19 @@ install_packages() {
             fi
 
             ;;
-	"DS")
-	                                         # Data Science
-	                                         local file_packages=()
+	 "DS")
+	                                        # Data Science
+	                                        local file_packages=()
 
-						 if [[ -f "./pacman-packages/DS_packages.txt" ]]; then
-                                                     mapfile -t file_packages < "./pacman-packages/DS_packages.txt"
-						 fi
-						 packages+=("${file_packages[@]}")
+						if [[ -f "./pacman-packages/DS_packages.txt" ]]; then
+                                                        mapfile -t file_packages < "./pacman-packages/DS_packages.txt"
+						fi
+						packages+=("${file_packages[@]}")
 						 
 	    arch-chroot /mnt pacman -S --noconfirm "${packages[@]}"
 	    if [ -n "$LNOS_AUR_HELPER" ] && [ "$LNOS_AUR_HELPER" != "none" ]; then
 		local aur_packages=(brave-bin)
-		arch-chroot /mnt /usr/bin/runuser -u "$LNOS_USERNAME" -- "$LNOS_AUR_HELPER" -$ --noconfirm "${aur_packages[@]"
+		arch-chroot /mnt /usr/bin/runuser -u "$LNOS_USERNAME" -- "$LNOS_AUR_HELPER" -S --noconfirm "${aur_packages[@]}"
 	    fi
 
 	    ;;
