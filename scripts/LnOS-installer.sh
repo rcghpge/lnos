@@ -19,7 +19,7 @@
 #
 # @file LnOS-installer.sh
 # @brief Installs Arch linux with LnOS customizations
-# @author Betim-Hodza, Ric3y
+# @author Betim-Hodza, Ric3y, rcghpge
 # @date 2025
 #
 
@@ -393,7 +393,7 @@ select_enable_aur() {
 select_package_profile() {
     if [ -z "$LNOS_PACKAGE_PROFILE" ]; then
         local user_input options
-        options=("CSE" "SWE" "CPE" "Custom" "Minimal")
+        options=("CSE" "SWE" "CPE" "DS" "Custom" "Minimal")
         user_input=$(gum_choose --header "+ Choose Package Profile" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1
         LNOS_PACKAGE_PROFILE="$user_input" && properties_generate
@@ -761,7 +761,23 @@ install_packages() {
             fi
 
             ;;
-        "Custom")
+	"DS")
+	                                         # Data Science
+	                                         local file_packages=()
+
+						 if [[ -f "./pacman-packages/DS_packages.txt" ]]; then
+                                                     mapfile -t file_packages < "./pacman-packages/DS_packages.txt"
+						 fi
+						 packages+=("${file_packages[@]}")
+						 
+	    arch-chroot /mnt pacman -S --noconfirm "${packages[@]}"
+	    if [ -n "$LNOS_AUR_HELPER" ] && [ "$LNOS_AUR_HELPER" != "none" ]; then
+		local aur_packages=(brave-bin)
+		arch-chroot /mnt /usr/bin/runuser -u "$LNOS_USERNAME" -- "$LNOS_AUR_HELPER" -$ --noconfirm "${aur_packages[@]"
+	    fi
+
+	    ;;
+	"Custom")
             gum_info "Custom package installation - user will be prompted"
             # This would be handled in the interactive part
             ;;

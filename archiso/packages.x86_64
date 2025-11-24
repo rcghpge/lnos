@@ -1,23 +1,21 @@
-# Network installer with VirtualBox compatibility
+# Network installer with ARM64 virtualization compatibility
 # Core system
 base
-linux
+linux-aarch64
 linux-firmware
 
-# Filesystem support (critical for VirtualBox)
+# Filesystem support (critical for virtualization)
 btrfs-progs
 dosfstools
 e2fsprogs
 ntfs-3g
 xfsprogs
-pv
 
 # Hardware and virtualization support
 virtualbox-guest-utils-nox
 open-vm-tools
 
 # Boot and hardware
-syslinux
 efibootmgr
 grub
 
@@ -37,7 +35,6 @@ curl
 arch-install-scripts
 parted
 gdisk
-reflector
 
 # Essential utilities
 sudo
@@ -53,7 +50,7 @@ lsof
 mkinitcpio-archiso
 squashfs-tools
 
-# Additional kernel support for VirtualBox
+# Additional kernel support for virtualization
 mkinitcpio
 mtools
 
@@ -63,6 +60,3 @@ ppp
 
 # Your installer requirements
 gum
-
-# LnOS Front End
-terminus-font
