@@ -161,11 +161,6 @@ print_header() {
  ███████████ ████ █████ ░░░███████░  ░░█████████ 
 ░░░░░░░░░░░ ░░░░ ░░░░░    ░░░░░░░     ░░░░░░░░░  
 
-:::  ===  === :::====  :::====  :::  === :::===  :::  === :::====  :::==== 
-:::  ===  === :::  === :::  === ::: ===  :::     :::  === :::  === :::  ===
-===  ===  === ===  === =======  ======    =====  ======== ===  === ======= 
- ===========  ===  === === ===  === ===      === ===  === ===  === ===     
-  ==== ====    ======  ===  === ===  === ======  ===  ===  ======  ===     
 '
     local header_version="               v. ${VERSION}"
     gum_white --margin "1 0" --align left --bold "Welcome to ${title} ${header_version}"
@@ -398,7 +393,7 @@ select_enable_aur() {
 select_package_profile() {
     if [ -z "$LNOS_PACKAGE_PROFILE" ]; then
         local user_input options
-        options=("CSE" "Custom" "Minimal")
+        options=("CSE" "SWE" "CPE" "Custom" "Minimal")
         user_input=$(gum_choose --header "+ Choose Package Profile" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1
         LNOS_PACKAGE_PROFILE="$user_input" && properties_generate
@@ -537,49 +532,63 @@ configure_system() {
 }
 
 install_bootloader() {
-    gum_info "Installing bootloader..."
+    gum_info "Installing bootloader with Secure Boot support..."
     
     local kernel_args=('rw' 'init=/usr/lib/systemd/systemd')
     [ "$LNOS_ENCRYPTION_ENABLED" = "true" ] && kernel_args+=("rd.luks.name=$(blkid -s UUID -o value "${LNOS_ROOT_PARTITION}")=cryptroot" "root=/dev/mapper/cryptroot") || kernel_args+=("root=PARTUUID=$(lsblk -dno PARTUUID "${LNOS_ROOT_PARTITION}")")
     
-    if [ "$LNOS_BOOTLOADER" = "grub" ]; then
-        sed -i "\,^GRUB_CMDLINE_LINUX=\"\",s,\",&${kernel_args[*]}," /mnt/etc/default/grub
-        
-        if [ "$BOOT_MODE" = "uefi" ]; then
-            arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
-        else
-            arch-chroot /mnt grub-install --target=i386-pc "$LNOS_DISK"
-        fi
-        
-        arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
-    else
-        # systemd-boot only works with UEFI
-        if [ "$BOOT_MODE" = "bios" ]; then
-            gum_warn "systemd-boot only supports UEFI. Falling back to GRUB for BIOS systems."
-            # Install GRUB as fallback
-            arch-chroot /mnt pacman -S --noconfirm grub
-            sed -i "\,^GRUB_CMDLINE_LINUX=\"\",s,\",&${kernel_args[*]}," /mnt/etc/default/grub
-            arch-chroot /mnt grub-install --target=i386-pc "$LNOS_DISK"
-            arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
-        else
-            arch-chroot /mnt bootctl --esp-path=/boot install
-            {
-                echo 'default main.conf'
-                echo 'console-mode auto'
-                echo 'timeout 0'
-                echo 'editor yes'
-            } > /mnt/boot/loader/loader.conf
-            
-            {
-                echo 'title   LnOS'
-                echo 'linux   /vmlinuz-linux-hardened'
-                echo 'initrd  /initramfs-linux-hardened.img'
-                echo "options ${kernel_args[*]}"
-            } > /mnt/boot/loader/entries/main.conf
-        fi
-    fi
-    
-    gum_info "Bootloader installed"
+		if [ "$LNOS_BOOTLOADER" = "systemd" ]; then 
+
+			# bios falls back to grub 
+			if [ "$BOOT_MODE" = "bios" ]; then 
+				if [ "$LNOS_BOOTLOADER" = "grub" ]; then
+						sed -i "\,^GRUB_CMDLINE_LINUX=\"\",s,\",&${kernel_args[*]}," /mnt/etc/default/grub
+						gum_warn "systemd-boot only supports UEFI. Falling back to GRUB for BIOS systems."
+						# Install GRUB as fallback
+						arch-chroot /mnt pacman -S --noconfirm grub
+						sed -i "\,^GRUB_CMDLINE_LINUX=\"\",s,\",&${kernel_args[*]}," /mnt/etc/default/grub
+						arch-chroot /mnt grub-install --target=i386-pc "$LNOS_DISK"
+						arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
+				fi
+
+				# install systemd boot 
+				arch-chroot /mnt pacman -S --noconfirm sbctl 
+				arch-chroot /mnt bootctl --esp-path=/boot install 
+
+				# config loader 
+				{
+					echo 'default main.conf'
+					echo 'console-mode auto'
+					echo 'timeout 0'
+					echo 'editor no' 
+				} > /mnt/boot/loader/loader.conf 
+
+				# config boot entry 
+				{
+					echo 'title   LnOS'
+					echo 'linux   /vmlinuz-linux-hardened'
+					echo 'initrd  /initramfs-linux-hardened.img'
+					echo "options ${kernel_args[*]}"
+				} > /mnt/boot/loader/entries/main.conf
+
+				# Set up Secure Boot
+        gum_info "Configuring Secure Boot..."
+        arch-chroot /mnt sbctl create-keys
+        arch-chroot /mnt sbctl enroll-keys
+        arch-chroot /mnt sbctl sign -s /boot/vmlinuz-linux-hardened
+        arch-chroot /mnt sbctl sign -s /boot/initramfs-linux-hardened.img
+        arch-chroot /mnt sbctl sign -s /boot/loader/loader.conf
+        arch-chroot /mnt sbctl sign -s /boot/loader/entries/main.conf
+
+				gum_info "Secure Boot configured with systemd-boot"
+
+			else 
+				gum_fail "ERR unkown bootloader ?"
+				exit 1 
+			fi 
+
+			gum_info "Bootloader installed"
+	fi
 }
 
 install_desktop_environment() {
@@ -677,33 +686,29 @@ install_aur_helper() {
 
 install_packages() {
     gum_info "Installing packages based on profile: $LNOS_PACKAGE_PROFILE"
+
+		# default packages 
+		local packages=(
+			vim nano git wget curl base-devel binutils coreutils  
+			dolphin btop htop tree unzip zip jq cowsay bzip2 
+			cava bat arch-audit man man-pages tldr strace fzf
+			openssh mpv spotify-launcher signal-desktop
+			
+		)
     
     case "$LNOS_PACKAGE_PROFILE" in
         "CSE")
             # Essential development tools for computer science students
-            local packages=(
-                # Development tools
-                neovim vim nano git lazygit wget curl 
-								base-devel binutils coreutils docker 
-								lazydocker gh 
-                # Programming languages and tools  
-                gcc clang make cmake gdb valgrind
-                python node npm llvm lld bear qt6-base
-                # Text editors and IDEs
-                code obsidian 
-                # System utilities
-                btop fastfetch htop tree unzip zip 
-								jq cowsay bzip2 cava bat arch-audit 
-								man mandb man-pages tldr strace fzf
-                # Network tools
-                openssh
-								# video
-								mpv obs-studio 
-								# audio
-								spotify-launcher 
-								# messaging
-								signal-desktop
-            )
+						# get the text from pacman-packages/CSE_packages.txt  
+						local file_packages=()
+
+						if [[ -f "./pacman-packages/CSE_packages.txt" ]]; then
+								# note mapfile OVERWRITES arrays which is why we have 2 
+								mapfile -t file_packages < "./pacman-packages/CSE_packages.txt"
+						fi
+
+						# Append the file's packages to the original array
+						packages+=("${file_packages[@]}")
             
             arch-chroot /mnt pacman -S --noconfirm "${packages[@]}"
             
@@ -712,14 +717,57 @@ install_packages() {
                 local aur_packages=(brave-bin)
                 arch-chroot /mnt /usr/bin/runuser -u "$LNOS_USERNAME" -- "$LNOS_AUR_HELPER" -S --noconfirm "${aur_packages[@]}"
             fi
+
+            ;;
+        "SWE")
+					  # basically a CS clone
+						local file_packages=()
+
+						if [[ -f "./pacman-packages/SWE_packages.txt" ]]; then
+								# note mapfile OVERWRITES arrays which is why we have 2 
+								mapfile -t file_packages < "./pacman-packages/SWE_packages.txt"
+						fi
+
+						# Append the file's packages to the original array
+						packages+=("${file_packages[@]}")
+            
+            arch-chroot /mnt pacman -S --noconfirm "${packages[@]}"
+            
+            # Install AUR packages if AUR helper is available
+            if [ -n "$LNOS_AUR_HELPER" ] && [ "$LNOS_AUR_HELPER" != "none" ]; then
+                local aur_packages=(brave-bin)
+                arch-chroot /mnt /usr/bin/runuser -u "$LNOS_USERNAME" -- "$LNOS_AUR_HELPER" -S --noconfirm "${aur_packages[@]}"
+            fi
+
+            ;;
+        "CPE")
+						# Computer Engineers
+						local file_packages=()
+
+						if [[ -f "./pacman-packages/CPE_packages.txt" ]]; then
+								# note mapfile OVERWRITES arrays which is why we have 2 
+								mapfile -t file_packages < "./pacman-packages/CPE_packages.txt"
+						fi
+
+						# Append the file's packages to the original array
+						packages+=("${file_packages[@]}")
+            
+            arch-chroot /mnt pacman -S --noconfirm "${packages[@]}"
+            
+            # Install AUR packages if AUR helper is available
+            if [ -n "$LNOS_AUR_HELPER" ] && [ "$LNOS_AUR_HELPER" != "none" ]; then
+                local aur_packages=(brave-bin)
+                arch-chroot /mnt /usr/bin/runuser -u "$LNOS_USERNAME" -- "$LNOS_AUR_HELPER" -S --noconfirm "${aur_packages[@]}"
+            fi
+
             ;;
         "Custom")
             gum_info "Custom package installation - user will be prompted"
             # This would be handled in the interactive part
             ;;
         "Minimal")
-            local packages=(vim git wget curl openssh)
-            arch-chroot /mnt pacman -S --noconfirm "${packages[@]}"
+            local min_packages=(vim git wget curl openssh)
+            arch-chroot /mnt pacman -S --noconfirm "${min_packages[@]}"
             ;;
     esac
     
