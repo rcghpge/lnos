@@ -19,7 +19,7 @@
 #
 # @file LnOS-installer.sh
 # @brief Installs Arch linux with LnOS customizations
-# @author Betim-Hodza, Ric3y
+# @author Betim-Hodza, Ric3y, rcghpge
 # @date 2025
 #
 
@@ -393,7 +393,7 @@ select_enable_aur() {
 select_package_profile() {
     if [ -z "$LNOS_PACKAGE_PROFILE" ]; then
         local user_input options
-        options=("CSE" "SWE" "CPE" "Custom" "Minimal")
+        options=("CSE" "SWE" "CPE" "DS" "Custom" "Minimal")
         user_input=$(gum_choose --header "+ Choose Package Profile" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1
         LNOS_PACKAGE_PROFILE="$user_input" && properties_generate
@@ -533,62 +533,61 @@ configure_system() {
 
 install_bootloader() {
     gum_info "Installing bootloader with Secure Boot support..."
-    
+
     local kernel_args=('rw' 'init=/usr/lib/systemd/systemd')
-    [ "$LNOS_ENCRYPTION_ENABLED" = "true" ] && kernel_args+=("rd.luks.name=$(blkid -s UUID -o value "${LNOS_ROOT_PARTITION}")=cryptroot" "root=/dev/mapper/cryptroot") || kernel_args+=("root=PARTUUID=$(lsblk -dno PARTUUID "${LNOS_ROOT_PARTITION}")")
-    
-		if [ "$LNOS_BOOTLOADER" = "systemd" ]; then 
+    if [ "$LNOS_ENCRYPTION_ENABLED" = "true" ]; then
+        kernel_args+=("rd.luks.name=$(blkid -s UUID -o value "${LNOS_ROOT_PARTITION}")=cryptroot"
+                      "root=/dev/mapper/cryptroot")
+    else
+        kernel_args+=("root=PARTUUID=$(lsblk -dno PARTUUID "${LNOS_ROOT_PARTITION}")")
+    fi
 
-			# bios falls back to grub 
-			if [ "$BOOT_MODE" = "bios" ]; then 
-				if [ "$LNOS_BOOTLOADER" = "grub" ]; then
-						sed -i "\,^GRUB_CMDLINE_LINUX=\"\",s,\",&${kernel_args[*]}," /mnt/etc/default/grub
-						gum_warn "systemd-boot only supports UEFI. Falling back to GRUB for BIOS systems."
-						# Install GRUB as fallback
-						arch-chroot /mnt pacman -S --noconfirm grub
-						sed -i "\,^GRUB_CMDLINE_LINUX=\"\",s,\",&${kernel_args[*]}," /mnt/etc/default/grub
-						arch-chroot /mnt grub-install --target=i386-pc "$LNOS_DISK"
-						arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
-				fi
+    # UEFI + systemd-boot
+    if [ "$BOOT_MODE" = "uefi" ] && [ "$LNOS_BOOTLOADER" = "systemd" ]; then
+        arch-chroot /mnt pacman -S --noconfirm sbctl
+        arch-chroot /mnt bootctl --esp-path=/boot install
 
-				# install systemd boot 
-				arch-chroot /mnt pacman -S --noconfirm sbctl 
-				arch-chroot /mnt bootctl --esp-path=/boot install 
+        # loader config
+        cat > /mnt/boot/loader/loader.conf <<EOF
+default main.conf
+console-mode auto
+timeout 0
+editor no
+EOF
 
-				# config loader 
-				{
-					echo 'default main.conf'
-					echo 'console-mode auto'
-					echo 'timeout 0'
-					echo 'editor no' 
-				} > /mnt/boot/loader/loader.conf 
+        # entry
+        mkdir -p /mnt/boot/loader/entries
+        cat > /mnt/boot/loader/entries/main.conf <<EOF
+title   LnOS
+linux   /vmlinuz-linux-hardened
+initrd  /initramfs-linux-hardened.img
+options ${kernel_args[*]}
+EOF
 
-				# config boot entry 
-				{
-					echo 'title   LnOS'
-					echo 'linux   /vmlinuz-linux-hardened'
-					echo 'initrd  /initramfs-linux-hardened.img'
-					echo "options ${kernel_args[*]}"
-				} > /mnt/boot/loader/entries/main.conf
-
-				# Set up Secure Boot
         gum_info "Configuring Secure Boot..."
-        arch-chroot /mnt sbctl create-keys
-        arch-chroot /mnt sbctl enroll-keys
-        arch-chroot /mnt sbctl sign -s /boot/vmlinuz-linux-hardened
-        arch-chroot /mnt sbctl sign -s /boot/initramfs-linux-hardened.img
-        arch-chroot /mnt sbctl sign -s /boot/loader/loader.conf
-        arch-chroot /mnt sbctl sign -s /boot/loader/entries/main.conf
+        # VM/firmware quirks
+        arch-chroot /mnt sbctl create-keys || gum_warn "sbctl create-keys failed (likely VM firmware); continuing"
+        arch-chroot /mnt sbctl enroll-keys --yes-this-might-brick-my-machine || gum_warn "sbctl enroll-keys warning; continuing"
+        arch-chroot /mnt sbctl sign -s /boot/vmlinuz-linux-hardened || gum_warn "Failed to sign kernel"
+        arch-chroot /mnt sbctl sign -s /boot/initramfs-linux-hardened.img || gum_warn "Failed to sign initramfs"
+        arch-chroot /mnt sbctl sign -s /boot/loader/loader.conf || gum_warn "Failed to sign loader.conf"
+        arch-chroot /mnt sbctl sign -s /boot/loader/entries/main.conf || gum_warn "Failed to sign entry"
+        gum_info "Secure Boot configured with systemd-boot (best effort)"
 
-				gum_info "Secure Boot configured with systemd-boot"
+    # BIOS (any bootloader choice) → GRUB
+    elif [ "$BOOT_MODE" = "bios" ]; then
+        gum_warn "systemd-boot only supports UEFI. Using GRUB for BIOS/Legacy systems."
+        arch-chroot /mnt pacman -S --noconfirm grub
+        sed -i "\,^GRUB_CMDLINE_LINUX=\"\",s,\",&${kernel_args[*]}," /mnt/etc/default/grub
+        arch-chroot /mnt grub-install --target=i386-pc "$LNOS_DISK"
+        arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
 
-			else 
-				gum_fail "ERR unkown bootloader ?"
-				exit 1 
-			fi 
+    else
+        gum_fail "ERR unknown bootloader (BOOT_MODE=${BOOT_MODE}, LNOS_BOOTLOADER=${LNOS_BOOTLOADER})"
+        exit 1
+    fi
 
-			gum_info "Bootloader installed"
-	fi
+    gum_info "Bootloader installed"
 }
 
 install_desktop_environment() {
@@ -761,7 +760,23 @@ install_packages() {
             fi
 
             ;;
-        "Custom")
+	 "DS")
+	                                        # Data Science
+	                                        local file_packages=()
+
+						if [[ -f "./pacman-packages/DS_packages.txt" ]]; then
+                                                        mapfile -t file_packages < "./pacman-packages/DS_packages.txt"
+						fi
+						packages+=("${file_packages[@]}")
+						 
+	    arch-chroot /mnt pacman -S --noconfirm "${packages[@]}"
+	    if [ -n "$LNOS_AUR_HELPER" ] && [ "$LNOS_AUR_HELPER" != "none" ]; then
+		local aur_packages=(brave-bin)
+		arch-chroot /mnt /usr/bin/runuser -u "$LNOS_USERNAME" -- "$LNOS_AUR_HELPER" -S --noconfirm "${aur_packages[@]}"
+	    fi
+
+	    ;;
+	"Custom")
             gum_info "Custom package installation - user will be prompted"
             # This would be handled in the interactive part
             ;;

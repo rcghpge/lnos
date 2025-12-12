@@ -1,0 +1,1 @@
+jupyterlab jupyter-notebook python numpy pandas matplotlib seaborn scikit-learn 
