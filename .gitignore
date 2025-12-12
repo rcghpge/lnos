@@ -3,9 +3,10 @@
 _book/
 
 # ISO Build Artifacts
-out/
+*.patch
 *.iso
 *.iso.sig
+out/
 work/
 /tmp/archiso-tmp/
 
@@ -15,6 +16,7 @@ test/
 build/
 dist/
 cache/
+patch/
 
 # Log files
 *.log
