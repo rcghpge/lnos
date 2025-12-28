@@ -1,5 +1,5 @@
 <p align="center">
-<img src="https://github.com/uta-lug-nuts/LnOS/blob/main/docs/images/Tux_with_toolbox.png?raw=true" alt="Tux with toolbox" style="max-width: 60%; height: auto;">
+<img src="https://github.com/uta-lug-nuts/LnOS/blob/main/docs/images/Tux_with_toolbox.png?raw=true" alt="Tux with toolbox" style="max-width: 60%;">
 </p>
 
 ## 🔐 LnOS a Customized Arch Distro tailored to UTA Students
