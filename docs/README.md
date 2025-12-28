@@ -1,4 +1,4 @@
-<center><img src="https://github.com/uta-lug-nuts/LnOS/blob/main/docs/images/Tux_with_toolbox.png?raw=true" width=auto height=auto alt="tux with toolbox"></center>
+<center><img src="https://github.com/uta-lug-nuts/LnOS/blob/main/docs/images/Tux_with_toolbox.png?raw=true" width=75% height=75% alt="tux with toolbox"></center>
 
 ## 🔐 LnOS a Customized Arch Distro tailored to UTA Students
 
@@ -111,7 +111,7 @@ Pre-built LnOS ISOs are available with the installer included.
 # Install archiso
 sudo pacman -S archiso
 
-# Clone and build
+## Clone and build
 git clone https://github.com/lugnuts-at-uta/LnOS.git
 cd LnOS
 ./build-iso.sh x86_64
@@ -122,7 +122,7 @@ cd LnOS
 git clone https://github.com/lugnuts-at-uta/LnOS.git
 cd LnOS
 
-# Build in Arch container
+## Build in Arch container
 docker run --rm --privileged \
   -v $(pwd):/workspace \
   -w /workspace \
