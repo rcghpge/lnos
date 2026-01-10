@@ -1,1 +1,10 @@
-jupyterlab jupyter-notebook python numpy pandas matplotlib seaborn scikit-learn 
+nano
+dhclient
+jupyterlab 
+jupyter-notebook 
+python 
+numpy 
+pandas 
+matplotlib 
+seaborn 
+scikit-learn 
