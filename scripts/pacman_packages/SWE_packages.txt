@@ -1,0 +1,1 @@
+neovim lazygit docker lazydocker gh gcc clang make cmake gdb valgrind python llvm lld bear qt6-base code obsidian npm node

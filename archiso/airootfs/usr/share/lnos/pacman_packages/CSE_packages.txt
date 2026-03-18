@@ -1,1 +1,1 @@
-bat openssh code neovim gcc gdb base-devel cmake python 
+neovim lazygit docker lazydocker gh gcc clang make cmake gdb valgrind python llvm lld bear qt6-base code obsidian 
